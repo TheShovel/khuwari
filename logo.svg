@@ -1,9 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Khuwari logo">
-  <!-- the frame: one keyframe, the canvas -->
-  <rect x="9" y="9" width="46" height="46" rx="10" fill="none" stroke="#8aa3b9" stroke-width="3.5"/>
-  <!-- the interpolation mesh, warped toward the pull -->
-  <path d="M9 40 C 20 38, 32 34, 44 28" fill="none" stroke="#8fb0a2" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
-  <path d="M32 9 C 34 18, 38 24, 44 28" fill="none" stroke="#8fb0a2" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
-  <!-- the inbetween keyframe, tugging the mesh out of the frame -->
-  <path d="M40 22 L52 16 L62 28 L50 36 Z" fill="#c3ab7d" stroke="#1b1f25" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- sketch frame: hand-drawn keyframe, wobbly -->
+  <path d="M11 12 C 11 9, 18 9, 30 9 C 42 9, 54 9, 55 12 C 56 22, 56 34, 55 52 C 54 55, 42 55, 30 55 C 18 55, 11 55, 10 52 C 9 34, 9 22, 11 12 Z" fill="none" stroke="#23262b" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- doubled stroke for sketch weight -->
+  <path d="M11 12 C 11 9, 18 9, 30 9 C 42 9, 54 9, 55 12 C 56 22, 56 34, 55 52 C 54 55, 42 55, 30 55 C 18 55, 11 55, 10 52 C 9 34, 9 22, 11 12 Z" fill="none" stroke="#23262b" stroke-width="0.9" stroke-linecap="round" opacity="0.35" transform="translate(0.9 0.7)"/>
+  <!-- interpolation mesh, blue pencil, warped -->
+  <path d="M9 40 C 20 38, 32 34, 44 28" fill="none" stroke="#4a6fa5" stroke-width="2.8" stroke-linecap="round" opacity="0.95"/>
+  <path d="M11 41.5 C 21 39.5, 32.5 35.5, 44.5 29.5" fill="none" stroke="#4a6fa5" stroke-width="0.9" stroke-linecap="round" opacity="0.35"/>
+  <path d="M32 9 C 34 18, 38 24, 44 28" fill="none" stroke="#6e9b7f" stroke-width="2.8" stroke-linecap="round" opacity="0.95"/>
+  <path d="M33.5 10.5 C 35.2 18.5, 39 24.5, 44.5 29" fill="none" stroke="#6e9b7f" stroke-width="0.9" stroke-linecap="round" opacity="0.35"/>
+  <!-- inbetween keyframe — sticky note ochre, taped, askew -->
+  <path d="M40 22.5 L52 16.5 L62 28.5 L50 36.5 Z" fill="#ffef9c" stroke="#23262b" stroke-width="1.7" stroke-linejoin="round"/>
+  <path d="M40 22.5 L52 16.5 L62 28.5 L50 36.5 Z" fill="none" stroke="#c49a5a" stroke-width="0.7" stroke-linejoin="round" opacity="0.5" transform="translate(0.6 0.6)"/>
+  <!-- tape over the inbetween corner -->
+  <path d="M48 15 L 56 18" stroke="rgba(255,255,255,0.9)" stroke-width="3.2" stroke-linecap="round" opacity="0.85"/>
+  <path d="M48 15 L 56 18" stroke="#d9d4c7" stroke-width="0.6" stroke-linecap="round" opacity="0.9"/>
 </svg>
