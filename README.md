@@ -1,10 +1,8 @@
 <div align="center">
 
-# Khuwari
+<img src="banner.PNG" alt="Khuwari" width="100%">
 
-**Fill in the frames between your keyframes, right in your browser.**
-
-<div>
+<div align="center">
   <img src="https://img.shields.io/github/stars/TheShovel/khuwari?style=flat-square&logo=github" alt="Stars">&nbsp;&nbsp;
   <img src="https://img.shields.io/github/languages/top/TheShovel/khuwari?style=flat-square&logo=javascript&label=language" alt="Language">&nbsp;&nbsp;
   <img src="https://img.shields.io/github/license/TheShovel/khuwari?style=flat-square" alt="License">&nbsp;&nbsp;
