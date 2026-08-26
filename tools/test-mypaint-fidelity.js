@@ -122,7 +122,34 @@ async function main() {
   const okMarkerSpacingPlain = nearly(100 / stepM0, 24.16, 1.5);
   log('marker plain-step dabs=' + (100 / stepM0).toFixed(1) + ' (expect ~24.2)');
 
-  const pass = okPencil && okPencilFull && okMarker && okPixel && okMarkerSpacing && okMarkerSpacingPlain;
+  // --- fast-stroke stability: the ink pen must stay ON the line (no
+  // slow-tracking drift off the path on a long fast segment) ---
+  const inkBuf = await fetchU8('/brushes/d)_Ink_pen_(mypaint).myb');
+  current = await parseMybBytes('ink', inkBuf, null);
+  refreshTip();
+  myStrokeInit({ x: 30, y: 200, press: 0.5 });
+  dabCarry = 0; dabLastPos = null;
+  stampSegment({ x: 30, y: 200, press: 0.5, t: 0 }, { x: 280, y: 200, press: 0.5, t: 0.02 });
+  let minY = 1e9, maxY = -1, painted = 0;
+  const dd = paintCtx.getImageData(0, 0, 512, 512).data;
+  for (let i = 3; i < dd.length; i += 4) if (dd[i] > 8) { painted++; const y = Math.floor((i - 3) / 4 / 512); if (y < minY) minY = y; if (y > maxY) maxY = y; }
+  const okFast = painted > 500 && minY >= 194 && maxY <= 207; // within the dab radius of y=200
+  log('ink fast-stroke: painted=' + painted + ' y[' + minY + ',' + maxY + '] (expect on-line)');
+
+  // --- pressure gate floor: the sketch pencil must stay visible below its
+  // ~0.40 pressure gate (previously it painted nearly nothing under ~40%) ---
+  const ppbuf = await fetchU8('/brushes/c)_Pencil_1_Sketch_(mypaint).myb');
+  const pencil2 = await parseMybBytes('pencil2', ppbuf, null);
+  current = pencil2;
+  const gate = pencil2.mypaint.pressureGate || 0;
+  const pf = { x: 0, y: 0, press: 0.3, sp1: 0, sp2: 0, dir: 0, st: 1 };
+  const lowOp = mypaintDab(0, 0, pencil2.radius, pencil2.opacity, pf, pf, 0.5, 0).op;
+  const pf2 = { x: 0, y: 0, press: 1, sp1: 0, sp2: 0, dir: 0, st: 1 };
+  const fullOp = mypaintDab(0, 0, pencil2.radius, pencil2.opacity, pf2, pf2, 0.5, 0).op;
+  const okGate = gate > 0.2 && gate < 0.6 && lowOp >= 0.1 && fullOp > 0.5;
+  log('pencil gate=' + gate.toFixed(3) + ' lowOp(p=0.3)=' + lowOp.toFixed(3) + ' fullOp(p=1)=' + fullOp.toFixed(3));
+
+  const pass = okPencil && okPencilFull && okMarker && okPixel && okMarkerSpacing && okMarkerSpacingPlain && okFast && okGate;
   log('RESULT: ' + (pass ? 'PASS' : 'FAIL'));
 }
 main().catch(e => { log('ERROR ' + (e && e.stack || e)); });

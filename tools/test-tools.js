@@ -106,8 +106,8 @@ async function main() {
   buildSelMask();
   pass('sel mask center', selPoint(35, 35) === true);
   pass('sel mask outside', selPoint(90, 90) === false);
-  // move selection content
-  selDown({ x: 35, y: 35 });
+  // move selection content (the Move tool's engine: drag inside the selection)
+  beginSelMove({ x: 35, y: 35 });
   selMove({ x: 55, y: 55 });
   selUp();
   let redAtNew = 0;

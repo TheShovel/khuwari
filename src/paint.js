@@ -843,7 +843,6 @@
     var opm = mySetting(brush, 'opaque_multiply', inputs);
     if (!isFinite(opm)) opm = 1;
     var opacity = clamp(Math.max(0, opaque) * opm, 0, 1);
-
     // ---- opaque_linearize: per-dab alpha compensation for dense stamping ----
     var ol = mySetting(brush, 'opaque_linearize', inputs);
     if (isFinite(ol) && ol > 0) {
@@ -851,6 +850,14 @@
       if (dpp < 1) dpp = 1;
       var lin = 1 + ol * (dpp - 1);
       opacity = 1 - Math.pow(Math.max(0, 1 - opacity), 1 / lin);
+    }
+    // Some presets' opaque_multiply pressure curve zeroes the opacity below a
+    // pressure threshold (the sketch pencils are invisible under ~40% pressure) -
+    // a tablet's natural light press would paint nothing at all. Below the gate
+    // give them a faint, still-visible floor; above it (full-pressure strokes)
+    // the behaviour is exactly the preset's.
+    if (mp.pressureGate > 0 && inputs.pressure < mp.pressureGate) {
+      opacity = Math.max(opacity, mp.opacityFloor || 0.12);
     }
 
     // ---- radius_logarithmic (with pressure/speed/etc curves) -> radius.
@@ -861,16 +868,11 @@
     var radius = Math.max(0.05, r);
     if (isFinite(rl)) radius = clamp(Math.exp(rl - rlBase + centerLog), 0.2, 1000);
 
-    // ---- position: slow_tracking lag, then offset_by_speed, then random -----
-    var stpd = mySetting(brush, 'slow_tracking_per_dab', inputs);
-    if (isFinite(stpd) && stpd > 0 && mySt) {
-      // libmypaint lags ACTUAL_X/Y behind the pointer by step_ddab / slowness
-      // (one update per dab, hence step_ddab ~ 1.0) - a trailing, sketchy hand.
-      var facSt = 1 - Math.exp(-1 / stpd);
-      mySt.actX += (x - mySt.actX) * facSt;
-      mySt.actY += (y - mySt.actY) * facSt;
-      x = mySt.actX; y = mySt.actY;
-    }
+    // ---- position: offset_by_speed, then random ------------------------------
+    // (libmypaint's slow_tracking_per_dab position lag is intentionally NOT
+    // applied: the app's own stabilizer + per-frame segment stream already
+    // smooths pointer positions, and stacking the per-dab chase on top made
+    // fast strokes trail dozens of pixels off the line.)
     var obs = mySetting(brush, 'offset_by_speed', inputs);
     if (isFinite(obs) && obs !== 0 && mySt) {
       // x += NORM_DX_SLOW * offset_by_speed * 0.1 (smoothed velocity vector)
@@ -2060,6 +2062,34 @@
       if (rbr && isFinite(+rbr.base_value)) mp.radiusByRandom = Math.abs(+rbr.base_value);
       var ol = s.opaque_linearize;
       if (ol && isFinite(+ol.base_value)) mp.opaqueLinearize = clamp(+ol.base_value, 0, 1);
+      // Pressure "gate" detection: presets whose opaque_multiply pressure curve
+      // drives base+curve below zero over some pressure range (the sketch
+      // pencils are invisible under ~40% pressure) get a faint floor below the
+      // gate pressure in mypaintDab, so a light tablet press still leaves a
+      // visible mark instead of painting nothing at all.
+      var oms = s.opaque, opm = s.opaque_multiply;
+      if (oms && opm && opm.inputs && opm.inputs.pressure && Array.isArray(opm.inputs.pressure) && opm.inputs.pressure.length >= 2) {
+        var opBase = isFinite(+oms.base_value) ? +oms.base_value : 0;
+        var omBase = isFinite(+opm.base_value) ? +opm.base_value : 0;
+        var pt0 = opm.inputs.pressure;
+        var minY = Infinity;
+        for (var pi0 = 0; pi0 < pt0.length; pi0++) if (isFinite(pt0[pi0][1]) && pt0[pi0][1] < minY) minY = pt0[pi0][1];
+        if (opBase > 0 && omBase + minY < 0) {
+          // the gate is the LOW end of the ramp: everything below the first
+          // pressure where base+curve is non-negative paints nothing/faint
+          for (var pi1 = 1; pi1 < pt0.length; pi1++) {
+            var yPrev = omBase + pt0[pi1 - 1][1], yCur = omBase + pt0[pi1][1];
+            if (yCur >= 0) {
+              var gateX = pt0[pi1][0];
+              if (isFinite(gateX) && gateX > 0.05 && gateX < 0.95) {
+                mp.pressureGate = gateX;
+                mp.opacityFloor = 0.12; // faint, still-visible light-pressure line
+              }
+              break;
+            }
+          }
+        }
+      }
       brush.mypaint = mp;
       if (j && j.comment) brush.name = (j.comment.match(/^([^,]*)/) || [null, brush.name])[1].trim() || brush.name;
       if (j && j.parent_brush_name) {
@@ -3709,12 +3739,12 @@
   }
 
   function selDown(p) {
-    // lasso tool always lassoes; the select tool uses the mode dropdown
+    // The selection tool ALWAYS draws: the current selection is momentarily
+    // kept so the outline does not flicker, and is replaced when the drag
+    // produces a shape (or cleared if the drag never becomes one). Moving the
+    // selected content is the Move tool's job (V), which mounts the same
+    // selDrag engine via beginSelMove.
     var mode = paintTool === 'lasso' ? 'lasso' : (selMode || 'rect');
-    if (selHit(p)) { beginSelMove(p, false); return; }
-    // start a new selection. The current selection is NOT dropped until the
-    // drag actually produces one, so a stray click no longer makes the outline
-    // vanish (it is replaced when the new shape appears on the first move).
     selDrag = { mode: 'draw', type: mode, sx: p.x, sy: p.y, pts: [{ x: p.x, y: p.y }] };
   }
 
@@ -3740,6 +3770,7 @@
       if (selDrag.pts.length >= 3) {
         sel = { type: 'lasso', path: selDrag.pts.slice(), feather: selFeatherVal() };
         buildSelMask();
+        selDrag.made = true;
       }
       renderOverlay();
       return;
@@ -3756,6 +3787,7 @@
     if (w >= 1 || h >= 1) {
       sel = { type: selDrag.type, x: x0, y: y0, w: w, h: h, feather: selFeatherVal() };
       buildSelMask();
+      selDrag.made = true;
     }
     renderOverlay();
   }
@@ -3784,10 +3816,13 @@
       compositeDisplay();
       return;
     }
-    // A draw drag that never produced a shape (plain click / tiny lasso) leaves
-    // the current selection untouched instead of wiping its outline.
+    // A plain click (or a drag that never became a shape) with the selection
+    // tool clears the selection; a real drag already replaced it on the move.
+    if (!selDrag.made) {
+      sel = null; selMaskCv = null;
+    }
     selDrag = null;
-    startAnts();
+    if (sel) startAnts(); else stopAnts();
     compositeDisplay();
   }
 

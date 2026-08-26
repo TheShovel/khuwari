@@ -208,12 +208,22 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var invOutline = darkOutline(0, 0, workW, workH);
       pass('invert has outline', invOutline > 200, 'dark=' + invOutline);
 
-      // ---------- 10. stray click outside keeps the selection outline ----------
+      // ---------- 10. clicking empty space with the select tool deselects ----------
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
       click(150, 150);   // click empty space, no drag
-      pass('stray click keeps selection', !!sel && selPoint(60, 60) === true);
+      pass('clicking empty space deselects', !sel, 'sel=' + (sel ? 'still-selected' : 'cleared'));
+
+      // ---------- 10b. the mode dropdown really switches shapes, even when the
+      // drag starts on top of the old selection ----------
+      clear();
+      lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
+      freshSel(40, 40, 100, 100);   // a rect selection exists
+      document.getElementById('paintSelMode').value = 'ellipse';
+      selMode = 'ellipse';
+      drag(50, 50, 110, 110);       // drag starting INSIDE the old rect
+      pass('dropdown ellipse mode draws an ellipse', !!sel && sel.type === 'ellipse', 'type=' + (sel && sel.type));
 
       // ---------- 11. feathered selection still masks the brush ----------
       clear();
@@ -233,7 +243,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       setPaintTool('wand');
       click(60, 60);
-      setPaintTool('select');
+      setPaintTool('move');   // move selected content with the Move tool
       drag(60, 60, 90, 90);
       pass('mask selection moved', count(255,0,0,75,75,135,135) > 300, 'red@new=' + count(255,0,0,75,75,135,135));
       pass('mask selection moved outline', darkOutline(75, 75, 135, 135) > 40, 'dark=' + darkOutline(75, 75, 135, 135));
