@@ -34,6 +34,9 @@
     // Reference audio track (a scratch/reference sound synced to the timeline).
     // Only the source data URL + meta are saved; the decoded buffer is derived.
     audio: { src: null, name: null, duration: 0, muted: false },
+    // Recent paint colours (newest first, max 8) from the paint editor; saved
+    // with the project so the history follows the file.
+    colorHistory: [],
     selectedId: null,
     selectedGapId: null,   // gap selected in the timeline (right panel shows it)
     selectedDotId: null,   // color-dot selected (right panel shows its properties)

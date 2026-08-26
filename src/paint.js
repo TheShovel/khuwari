@@ -217,6 +217,50 @@
     return hex;
   }
 
+  // Record a colour only when it was actually painted onto the canvas: a real
+  // brush stroke, line, shape or bucket fill. Picking a colour (wheel / hex /
+  // eyedropper) alone does not touch the history, and eraser strokes never add
+  // anything (no colour was laid down).
+  function rememberUsedColor() {
+    if (eraserOn || (current && current.eraser)) return;
+    rememberRecentColor(current ? current.color : fgColor);
+  }
+
+  // Remember a colour the user actually settled on (newest first, 8 max,
+  // deduped) in the project state, and refresh the Recent swatches.
+  function rememberRecentColor(hex) {
+    if (typeof hex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+    hex = hex.toLowerCase();
+    if (!Array.isArray(state.colorHistory)) state.colorHistory = [];
+    var i = state.colorHistory.indexOf(hex);
+    if (i === 0) return;                       // already the newest
+    if (i > 0) state.colorHistory.splice(i, 1); // re-promote earlier entries
+    state.colorHistory.unshift(hex);
+    if (state.colorHistory.length > 8) state.colorHistory.length = 8;
+    renderRecentColors();
+  }
+
+  // Draw the Recent-colors swatch row (one button per remembered colour).
+  function renderRecentColors() {
+    var box = byId('paintRecentColors');
+    if (!box) return;
+    box.innerHTML = '';
+    if (!Array.isArray(state.colorHistory)) state.colorHistory = [];
+    state.colorHistory.forEach(function (hex) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'paint-recent-swatch';
+      b.style.background = hex;
+      b.title = hex;
+      b.addEventListener('click', function () {
+        setPaintColor(hex);
+        refreshTip();
+        syncColorWheel();
+      });
+      box.appendChild(b);
+    });
+  }
+
   function makeBrush(name, o) {
     return Object.assign({
       name: name, engine: 'pixel', radius: 40, opacity: 1, hardness: 0.8,
@@ -264,12 +308,15 @@
   // ellipse convention as stampDab: long axis along `angle`, half-length r;
   // perpendicular half-length r/ratio (rasterizer calculate_rr).
   // For MyPaint brushes only.
-  function mypaintStep(dist, dt, ratio, angle, dx, dy) {
+  function mypaintStep(dist, dt, ratio, angle, dx, dy, actualR) {
     var mp = current.mypaint || {};
     var dpa = mp.dabsPerActual || 0, dpb = mp.dabsPerBasic || 0;
     var dps = mp.dabsPerSecond || 0;
-    var r = Math.max(0.05, current.radius);
-    var br = (mp.baseRadius > 0) ? mp.baseRadius : r;
+    // count_dabs_to spaces by the pressure-mapped ACTUAL radius (libmypaint
+    // reads state->actual_radius here), so light-pressure dabs get placed
+    // denser instead of breaking into dots at the preset's base spacing.
+    var r = Math.max(0.05, actualR || current.radius);
+    var br = (mp.baseRadius > 0) ? mp.baseRadius : current.radius;
     var effDist = dist;
     if (ratio > 1 && isFinite(dx) && isFinite(dy) && isFinite(angle)) {
       // Same transform as calculate_rr / count_dabs_to.
@@ -281,6 +328,31 @@
     var dabs = effDist / r * dpa + effDist / br * dpb + Math.max(0, dt || 0) * dps;
     if (!(dabs > 0)) dabs = dist / Math.max(0.05, 2 * r * 0.25); // fallback: 25% of diameter
     return Math.max(0.05, dist / dabs);
+  }
+
+  // Radius a MyPaint brush actually paints at for the inputs at the midpoint
+  // of a segment - used to space dabs by the pressure-scaled size.
+  function mypaintSegRadius(sm) {
+    var brush = current;
+    if (!brush.mySettings) return current.radius;
+    var rl = mySetting(brush, 'radius_logarithmic', sm);
+    if (!isFinite(rl)) return current.radius;
+    var rlBase = 0;
+    var rls = brush.mySettings.radius_logarithmic;
+    if (rls && isFinite(+rls.base_value)) rlBase = +rls.base_value;
+    var centerLog = Math.log(Math.max(0.2, current.radius));
+    return clamp(Math.exp(rl - rlBase + centerLog), 0.2, 1000);
+  }
+
+  // Radius a Krita pixel brush paints at for the given pressure (its Size
+  // option curve), used to space dabs so light-pressure strokes stay
+  // continuous. With no size dynamics the preset radius spacing is unchanged.
+  function spacingRadiusKpp(press) {
+    var k = current.kpp;
+    if (!k || !k.used || !k.used.size) return current.radius;
+    var sc = kppEval(k.sizeCurve, press, 0.5);
+    if (!isFinite(sc)) return current.radius;
+    return Math.max(0.2, current.radius * sc);
   }
 
   // Krita's shipped default presets (the same set bundled in brushes/, so the
@@ -936,11 +1008,15 @@
       // elliptical (see mypaintStep). dt applies only across distinct timed
       // samples.
       var segDt = (from.t != null && to.t != null && to.t > from.t) ? (to.t - from.t) : 0;
-      // Evaluate the elliptical ratio/angle at the segment midpoint (the dab
-      // engine evaluates it per-dab; a segment-level value is a close approx).
-      var segRatio = 1, segAng = NaN;
+      // Evaluate the elliptical ratio/angle AND the pressure-mapped radius at
+      // the segment midpoint (the dab engine evaluates them per-dab; a
+      // segment-level value is a close approx for the short stabilizer
+      // segments). Spacing by the pressure-scaled radius keeps light-pressure
+      // strokes continuous.
+      var segRatio = 1, segAng = NaN, segR = current.radius;
       if (current.mySettings) {
         var sm = dabInputs(from, to, 0.5);
+        segR = mypaintSegRadius(sm);
         var ser = mySetting(current, 'elliptical_dab_ratio', sm);
         if (isFinite(ser) && ser > 1) {
           segRatio = clamp(ser, 1, 40);
@@ -948,9 +1024,13 @@
           if (isFinite(sea)) segAng = sea * Math.PI / 180;
         }
       }
-      step = mypaintStep(dist, segDt, segRatio, segAng, dx, dy);
+      step = mypaintStep(dist, segDt, segRatio, segAng, dx, dy, segR);
     } else {
-      step = Math.max(0.5, 2 * current.radius * current.spacing);
+      // Pressure-scaled spacing: the Size curve can shrink the dab far below
+      // the preset radius, and spacing must follow it or the stroke breaks
+      // into dots between full-pressure dabs.
+      var midPress = (from.press != null && to.press != null) ? (from.press + to.press) / 2 : (from.press != null ? from.press : 0.5);
+      step = Math.max(0.5, 2 * spacingRadiusKpp(midPress) * current.spacing);
     }
     dabCarry = dabCarry % step;
     var ang = current.followDir ? Math.atan2(dy, dx) : null;
@@ -997,9 +1077,10 @@
     var d = Math.hypot(dx, dy);
     var step;
     if (current.mypaint) {
-      var segRatio = 1, segAng = NaN;
+      var segRatio = 1, segAng = NaN, segR = current.radius;
       if (current.mySettings) {
         var sm = dabInputs({ x: dabLastPos.x, y: dabLastPos.y, press: pt.press }, pt, 0.5);
+        segR = mypaintSegRadius(sm);
         var ser = mySetting(current, 'elliptical_dab_ratio', sm);
         if (isFinite(ser) && ser > 1) {
           segRatio = clamp(ser, 1, 40);
@@ -1007,9 +1088,9 @@
           if (isFinite(sea)) segAng = sea * Math.PI / 180;
         }
       }
-      step = mypaintStep(d, (pt.t != null && dabLastPos.t != null) ? Math.max(0, pt.t - dabLastPos.t) : 0, segRatio, segAng, dx, dy);
+      step = mypaintStep(d, (pt.t != null && dabLastPos.t != null) ? Math.max(0, pt.t - dabLastPos.t) : 0, segRatio, segAng, dx, dy, segR);
     } else {
-      step = Math.max(0.5, 2 * current.radius * current.spacing);
+      step = Math.max(0.5, 2 * spacingRadiusKpp(pt.press) * current.spacing);
     }
     // Only seal if the end is at least half a spacing away from the last dab,
     // otherwise the next dab would land almost on top of it.
@@ -1204,6 +1285,7 @@
     paintCtx.globalAlpha = 1;
     paintCtx.globalCompositeOperation = 'source-over';
     commitSelScratch();
+    rememberUsedColor();
     compositeDisplay();
     refreshLayerThumbs();
     try { paintCanvas.releasePointerCapture(ev.pointerId); } catch (e) {}
@@ -2901,6 +2983,7 @@
     refreshTip();
     refreshBrushUI();
     syncColorWheel(); // keep the color wheel in step with the brush colour
+    renderRecentColors(); // project + session paint colour history
     rebuildLayerUI();
     syncPaintOnionUI();
     syncPaintPlayheadUI();
@@ -3909,6 +3992,9 @@
     var limitEl = byId('paintFillUseSel');
     var useSel = !!(selMaskCv && (limitEl ? limitEl.checked : true));
     floodFill(ctx, p.x, p.y, tol, contig, useSel);
+    // bucket fill always lays the current colour down (even with an eraser
+    // brush selected), so it always enters the history
+    rememberRecentColor(current ? current.color : fgColor);
     compositeDisplay();
   }
 
@@ -4000,6 +4086,7 @@
   }
 
   function lineUp() {
+    rememberUsedColor();
     toolDrag = null;
     compositeDisplay();
   }
@@ -4039,6 +4126,7 @@
   }
 
   function shapeUp() {
+    rememberUsedColor();
     toolDrag = null;
     compositeDisplay();
   }

@@ -253,6 +253,44 @@ async function main() {
   pass('transform scale non-uniform', Math.abs(stretchedH - 80) < 2 && stretchedW > 150, 'w=' + Math.round(stretchedW) + ' h=' + Math.round(stretchedH));
   commitXfrm();
 
+  // ---- pressure-aware dab spacing: light strokes must stay continuous ----
+  // A Krita pixel brush whose Size option maps pressure onto radius: at press
+  // 0.1 the dab is ~1.5px but base-12px spacing would leave big gaps between
+  // dabs. Spacing must follow the pressure-scaled radius.
+  layerCtx().clearRect(0, 0, workW, workH);
+  current = makeBrush('PressureGap', {
+    engine: 'paintbrush', radius: 12, opacity: 1, spacing: 0.2, color: '#ff00ff',
+    kpp: {
+      used: { size: true, opacity: false, rotation: false, scatter: false },
+      sizeCurve: { enabled: true, mode: 0, common: [{ x: 0, y: 0.03 }, { x: 1, y: 1 }], sensors: [{ id: 'pressure', pts: [{ x: 0, y: 0.03 }, { x: 1, y: 1 }] }] },
+      scatter: 0, scatterAxisX: false, scatterAxisY: false
+    }
+  });
+  refreshTip();
+  paintCtx = activeLayer.canvas.getContext('2d');
+  dabCarry = 0; dabLastPos = null;
+  stampSegment({ x: 20, y: 64, press: 0.1 }, { x: 120, y: 64, press: 0.1 });
+  (function () {
+    var dl = layerCtx().getImageData(0, 0, workW, workH).data;
+    var longest = 0, run = 0;
+    for (var cx = 20; cx <= 120; cx++) {
+      var has = false;
+      for (var cy = 60; cy <= 68; cy++) if (dl[(cy * workW + cx) * 4 + 3] > 40) { has = true; break; }
+      if (has) { if (run > longest) longest = run; run = 0; }
+      else run++;
+    }
+    if (run > longest) longest = run;
+    pass('light-pressure stroke is continuous', longest <= 1, 'longestGap=' + longest);
+  })();
+  // mypaint spacing must densify as pressure shrinks the actual radius
+  current = makeBrush('MPDensity', {
+    engine: 'mypaint', radius: 4, opacity: 1, spacing: 0.1, color: '#f0f',
+    mypaint: { dabsPerActual: 2, dabsPerBasic: 0, baseRadius: 4, grainOffset: 0, radiusByRandom: 0, opaqueLinearize: 0 }
+  });
+  var stepBase = mypaintStep(100, 0, 1, NaN, 100, 0);
+  var stepSmall = mypaintStep(100, 0, 1, NaN, 100, 0, 0.5);
+  pass('mypaint spacing follows pressured radius', stepSmall < stepBase && stepSmall < 0.5, 'base=' + stepBase.toFixed(3) + ' small=' + stepSmall.toFixed(3));
+
   log('RESULT: ' + (lines.some(l => l.startsWith('FAIL ')) ? 'FAIL' : 'PASS'));
 }
 main().catch(e => { log('ERROR ' + (e && e.stack || e)); });

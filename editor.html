@@ -627,7 +627,10 @@
         <div id="paintColor" class="paint-color-wrap" title="Current colour" style="background:#1a1a1a"></div>
         <div class="spacer"></div>
         <div id="paintEditBanner" class="paint-banner hidden"></div>
-        <button id="btnPaintClose" class="btn icon paint-close" title="Close (Esc)">×</button>
+        <button id="btnPaintClose" class="btn primary paint-close" type="button" title="Back to the editor (Esc)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 12v.01"/><path d="M3 21h18"/><path d="M5 21v-16a2 2 0 0 1 2 -2h7.5m2.5 10.5v7.5"/><path d="M14 7h7m-3 -3l3 3l-3 3"/></svg>
+          <span>Back</span>
+        </button>
       </div>
 
       <div class="paint-body">
@@ -821,6 +824,10 @@
                   <label class="paint-field">Hex
                     <input id="paintCwHex" class="text-input mono" value="#1a1a1a" maxlength="7" spellcheck="false">
                   </label>
+                </div>
+                <div class="paint-cw-recent">
+                  <div class="paint-cw-recent-label">Recent colors</div>
+                  <div id="paintRecentColors" class="paint-recent-colors"></div>
                 </div>
               </div>
             </div>

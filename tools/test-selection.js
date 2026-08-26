@@ -238,6 +238,54 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       pass('mask selection moved', count(255,0,0,75,75,135,135) > 300, 'red@new=' + count(255,0,0,75,75,135,135));
       pass('mask selection moved outline', darkOutline(75, 75, 135, 135) > 40, 'dark=' + darkOutline(75, 75, 135, 135));
 
+      // ---------- 13. color history: ONLY colors actually used on the canvas ----------
+      state.colorHistory = [];
+      renderRecentColors();
+      setPaintColor('#101010');   // picked, but never painted
+      pass('picking alone does not add to recents', state.colorHistory.length === 0, 'n=' + state.colorHistory.length);
+      function paintWith(hex, x0, y0, x1, y1) {
+        current = makeBrush('Hist' + hex, { radius: 6, opacity: 1, spacing: 0.2, color: hex });
+        refreshTip();
+        setPaintTool('brush');
+        drag(x0, y0, x1, y1);
+      }
+      paintWith('#222222', 60, 60, 100, 60);
+      pass('a painted stroke adds its color', state.colorHistory[0] === '#222222' && state.colorHistory.length === 1, 'hist=' + state.colorHistory.join(','));
+      paintWith('#333333', 60, 90, 100, 90);
+      pass('newest painted color goes first', state.colorHistory[0] === '#333333' && state.colorHistory.length === 2, 'hist=' + state.colorHistory.join(','));
+      current = makeBrush('HistFill', { radius: 6, opacity: 1, spacing: 0.2, color: '#444444' });
+      setPaintTool('fill');
+      fillDown({ x: 20, y: 20 });
+      pass('bucket fill adds the color', state.colorHistory[0] === '#444444', 'hist=' + state.colorHistory.join(','));
+      current = makeBrush('HistErase', { radius: 6, opacity: 1, spacing: 0.2, eraser: true, color: '#555555' });
+      refreshTip();
+      setPaintTool('brush');
+      drag(80, 80, 120, 80);
+      pass('eraser strokes do not add colors', state.colorHistory[0] === '#444444' && state.colorHistory.indexOf('#555555') === -1, 'hist=' + state.colorHistory.join(','));
+      var hexes = ['#111111', '#000011', '#332211', '#445566', '#778899', '#a0b0c0', '#123456', '#654321', '#fedcba', '#010203'];
+      for (var hp = 0; hp < hexes.length; hp++) paintWith(hexes[hp], 30, 130 + (hp % 2) * 40, 60, 130 + (hp % 2) * 40);
+      pass('history capped at 8 newest-first', state.colorHistory.length === 8 && state.colorHistory[0] === '#010203', 'n=' + state.colorHistory.length + ' first=' + state.colorHistory[0]);
+      state.colorHistory = ['#123456'];
+      renderRecentColors();
+      document.querySelector('#paintRecentColors .paint-recent-swatch').click();
+      pass('swatch click applies the colour', current.color === '#123456', 'color=' + current.color);
+      state.colorHistory = ['#abcdef'];
+      var saved = projectData();
+      pass('project file carries colorHistory', Array.isArray(saved.colorHistory) && saved.colorHistory[0] === '#abcdef', 'first=' + (saved.colorHistory && saved.colorHistory[0]));
+      applyProjectData(saved);
+      pass('project load restores colorHistory', Array.isArray(state.colorHistory) && state.colorHistory[0] === '#abcdef', 'first=' + state.colorHistory[0]);
+
+      // ---------- 14. leaving the page with unsaved work asks for confirmation ----------
+      var leavePrompt = function () { var e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; };
+      captureSavedBaseline();
+      pass('clean project does not prompt on leave', leavePrompt() === false);
+      state.zoom = (state.zoom === 55 ? 56 : 55);
+      pass('unsaved edits prompt on leave', leavePrompt() === true);
+      captureSavedBaseline();
+      pass('saving clears the warning', leavePrompt() === false);
+      newProject();
+      pass('new project clears the warning', leavePrompt() === false);
+
       log('RESULT: ' + (out.some(function(l){ return l.indexOf('FAIL') === 0; }) ? 'FAIL' : 'PASS'));
       return out.join('\\n');
       } catch (e) { return 'THREW ' + (e && e.stack || e); }

@@ -49,6 +49,9 @@
       // Reference audio track (a scratch sound synced to the timeline). Only
       // the source data URL + meta are saved; the decoded buffer is derived.
       audio: { src: state.audio.src, name: state.audio.name, duration: state.audio.duration, muted: state.audio.muted },
+      // Recent paint colours (newest first, max 8), so the paint editor's color
+      // history rides along with the project file.
+      colorHistory: (state.colorHistory || []).slice(0, 8),
       // Custom brush presets (settings + tip image as a data URL). Only
       // user-made brushes are stored; defaults are recreated on load.
       brushes: (typeof brushList !== 'undefined' && Array.isArray(brushList))
@@ -174,6 +177,13 @@
     state.audio = (au && au.src)
       ? { src: au.src, name: au.name || null, duration: +au.duration || 0, muted: !!au.muted }
       : { src: null, name: null, duration: 0, muted: false };
+    // Recent paint colours: sanitized into unique lowercase #rrggbb (newest
+    // first, max 8); a hand-edited project can't crash the renderer.
+    state.colorHistory = (Array.isArray(data.colorHistory) ? data.colorHistory : [])
+      .filter(function (c) { return typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c); })
+      .map(function (c) { return c.toLowerCase(); })
+      .filter(function (c, ix, arr) { return arr.indexOf(c) === ix; })
+      .slice(0, 8);
     // Custom brush presets are owned by the paint tool (it holds brushList),
     // so hand them off to be restored there.
     if (Array.isArray(data.brushes) && typeof applyLoadedBrushes === 'function') {
@@ -218,6 +228,7 @@
   function saveProjectFile() {
     var blob = new Blob([JSON.stringify(projectData(), null, 2)], { type: 'application/json' });
     downloadBlob(blob, 'khuwari-project.khuwari', 'application/json');
+    captureSavedBaseline();
     toast('Project saved (.khuwari)');
   }
 
@@ -249,6 +260,7 @@
         // different frame count) is regenerated automatically.
         scheduleGenerate(100);
         toast('Project loaded');
+        captureSavedBaseline();
       } catch (e) {
         toast('Could not load project file. Choose a .khuwari file saved from this app.');
       }
@@ -277,6 +289,7 @@
     state.gapBlur = {};
     state.camera = { enabled: true, keys: [] };
     state.audio = { src: null, name: null, duration: 0, muted: false };
+    state.colorHistory = [];
     if (typeof resetPaintBrushes === 'function') resetPaintBrushes();
     if (typeof initAudioFromProject === 'function') initAudioFromProject();
     state.dirty = new Set();
@@ -290,6 +303,7 @@
     renderAll();
     syncInputs();
     enterApp();
+    captureSavedBaseline();
   }
 
   // Load the bundled example project (example.khuwari) from the start screen's
@@ -305,3 +319,32 @@
       toast('Could not load the example project: ' + (e && e.message ? e.message : e));
     });
   }
+
+  // ---- unsaved-changes guard ------------------------------------------------
+  // Baseline snapshot of the fully serialized project, captured whenever the
+  // project is saved, loaded or reset. Every edit - keyframes, layers, dots,
+  // paint, camera, audio - shows up automatically in the next comparison, so no
+  // individual action has to be flagged. Leaving or reloading the tab with
+  // unsaved work asks for confirmation.
+  var savedBaseline = JSON.stringify(projectData());
+
+  function captureSavedBaseline() {
+    savedBaseline = JSON.stringify(projectData());
+  }
+
+  function projectHasUnsavedChanges() {
+    try {
+      return JSON.stringify(projectData()) !== savedBaseline;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  window.addEventListener('beforeunload', function (e) {
+    if (!projectHasUnsavedChanges()) return;
+    // Modern browsers ignore the message text and show their own "leave site?"
+    // wording - preventDefault (plus returnValue for older engines) is what
+    // actually turns the prompt on.
+    e.preventDefault();
+    e.returnValue = '';
+  });

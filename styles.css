@@ -1840,7 +1840,7 @@ button:focus-visible {
 .paint-color-wrap { display: block; width: 26px; height: 26px; flex: 0 0 auto;
   border-radius: 6px; border: 1px solid var(--border);
   background: var(--bg); cursor: default; }
-.paint-close { margin-left: 2px; }
+.paint-close { margin-left: 2px; padding: 7px 14px; font-weight: 600; gap: 7px; }
 
 /* Main workspace row. */
 .paint-body { display: flex; min-height: 0; flex: 1; }
@@ -1905,6 +1905,20 @@ button:focus-visible {
 .paint-cw-hex { display: flex; justify-content: center; }
 .paint-cw-hex .paint-field { flex: 0 0 auto; width: 176px; }
 .paint-cw-hex .text-input { font-family: var(--mono); text-align: center; }
+
+/* Recent-colour swatch row (paint history, newest first). */
+.paint-cw-recent { margin-top: 9px; }
+.paint-cw-recent-label { font-size: 11px; color: var(--muted); margin: 0 0 5px; text-align: center; }
+.paint-recent-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+.paint-recent-swatch {
+  width: 18px; height: 18px; padding: 0;
+  border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.paint-recent-swatch:hover { transform: scale(1.18); border-color: #fff; }
 
 /* Tool-options fields. */
 .paint-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px;

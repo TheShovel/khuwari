@@ -15,17 +15,14 @@ Khuwari is a browser based animation tool that fills in the frames between your 
 
 ## What you can do
 
-- **ML inbetweens.** A machine learning model generates the frames between your keyframes, with a built-in fallback and a squash and stretch mode per gap.
+- **ML inbetweens.** A machine-learning model (RIFE via ONNX Runtime Web) generates the frames between your keyframes, with a built-in fallback engine and a squash-and-stretch mode per gap. Edit a keyframe and the affected gaps regenerate automatically — nothing is baked until you export.
 - **Layer based timeline.** Backgrounds, characters and effects each live on their own layer, with their own keyframes and gaps.
 - **Color fill dots.** Drop dots on a color layer and they fill the line art on the layer above, each with its own threshold, grow radius, gradient and timing.
 - **Onion skinning.** See the frames around the one you are working on, as ghosts or tinted, with configurable frame counts.
 - **Motion blur.** Per gap motion blur that eases in and out with the movement, to mask small glitches in the generated frames.
-- **Blend modes.** 16 blend modes per keyframe.
 - **Camera.** A non-destructive pan / zoom / rotation track, keyframed on its own row in the timeline and included in exports, plus per-key lens and film effects: fisheye, film grain, chromatic aberration, vignette and handheld shake.
 - **Reference audio.** Load a sound file to animate to; it plays in sync with the timeline, and the file rides along inside your project file.
-- **Undo / redo.** Step any edit back or forward (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y), in the timeline and in the paint tool.
-- **Built-in paint tool.** A Krita-style drawing workspace with layers (opacity, visibility and blend modes), onion skinning and brush stabilizers. Ships with Krita brush presets, loads more `.kpp` brushes, and paint-made library images stay editable (layers + blend modes intact).
-- **Export.** PNG sequence, animated GIF or video (MP4, WebM, MKV, MOV or MPEG-TS), at the resolution you pick.
+- **Built-in paint tool.** A Krita-style drawing workspace with layers (opacity, visibility and blend modes), onion skinning, brush stabilizers and an HSV color wheel. Real selections — rectangle, ellipse, freehand lasso and a magic wand, with feather, invert, grow/shrink and move — and painting, erasing and fill stay inside them. Ships with Krita's own brush presets, loads more `.kpp` and MyPaint `.myb` brushes, and paint-made library images stay editable with their layers intact.
 - **Local and private.** The whole tool runs in your browser. No accounts, no uploads, no tracking.
 
 ## Try it
@@ -49,7 +46,7 @@ The website lives at [theshovel.rocks/khuwari](https://theshovel.rocks/khuwari/)
 1. Add images to the asset library.
 2. Drag them onto the timeline as keyframes.
 3. Set how each gap behaves and let the machine generate the inbetweens.
-4. Play, tweak, and export a video, GIF or frame sequence.
+4. Play, tweak, and export a PNG frame sequence, GIF or video (MP4, WebM, MKV, MOV or MPEG-TS) at the resolution you pick — inbetweens are upscaled to the export size.
 
 Projects save as single `.khuwari` files, which are plain JSON.
 
@@ -64,9 +61,15 @@ Loading is logged to the browser console with a `[brushes]` prefix, so a failed 
 
 ## Development
 
-The editor code lives in `src/` as plain scripts, one file per concern (state, elements, workers, timeline, generation, export, and so on). No build step: `editor.html` loads them in order, and the whole editor shares one global scope. Edit a file in `src/` and refresh the page.
+The editor code lives in `src/` as plain scripts, one file per concern (state, elements, workers, timeline, generation, export, paint, and so on). No build step: `editor.html` loads them in order, and the whole editor shares one global scope. Edit a file in `src/` and refresh the page.
 
-Roughly ordered by dependency, so read them top to bottom: `01-header.js` opens the app and pulls in the vendor globals, `24-footer.js` starts it (`boot()`).
+Roughly ordered by dependency, so read them top to bottom: `src/header.js` pulls in the vendor globals (the morph fallback, GIF encoder, ML model), `src/state.js` holds the project state, and `src/footer.js` starts everything with `boot()` (defined in `src/boot.js`).
+
+## Our stance on AI
+
+<img align="right" width="220" src="happyartist.png" alt="An old-school artist at their drawing board">
+
+We don't support AI-generated "art". We see AI as a practical tool, meant to simplify tedious tasks and make life easier. Not to replace the things we enjoy doing. We will never add features that let you generate images, music or videos. All art for this project is made by TheShovel and the Khuwari contributors, without any generative AI tools.
 
 ## Credits
 

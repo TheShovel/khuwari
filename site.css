@@ -597,6 +597,45 @@ section:first-of-type { padding-top: 40px; }
 }
 .step p { margin: 0; color: #656b77; font-size: 14.5px; line-height: 1.55; }
 
+/* ---------- values — our stance on AI ---------- */
+
+.values-wrap { padding-top: 30px; text-align: center; }
+.values-card {
+  margin: 26px auto 0;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  text-align: left;
+  background: #fff;
+  border: 2.4px solid var(--ink);
+  border-radius: 18px 14px 16px 12px / 14px 18px 12px 16px;
+  padding: 26px 30px;
+  box-shadow: 4px 5px 0 rgba(35,38,43,0.08);
+  transform: rotate(-0.2deg);
+}
+.values-card p {
+  margin: 0;
+  flex: 1;
+  color: var(--ink-2);
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+.values-card img {
+  width: 108px;
+  flex: 0 0 auto;
+  border: 2.2px solid var(--ink);
+  border-radius: 10px 12px 9px 11px / 11px 9px 12px 10px;
+  box-shadow: 3px 3px 0 rgba(35,38,43,0.08);
+  transform: rotate(1.6deg);
+  /* silhouette: the artist is rendered solid black (alpha preserved) */
+  filter: brightness(0);
+}
+@media (max-width: 640px) {
+  .values-card { flex-direction: column; text-align: center; gap: 16px; padding: 24px 20px; }
+  .values-card img { width: 120px; }
+}
+
 /* ---------- privacy band — highlighter sticky note ---------- */
 
 .band {
