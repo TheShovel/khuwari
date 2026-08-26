@@ -52,7 +52,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
   console.log('LAYOUT: ' + res.result.value);
   ws.close(); ch.kill(); server.close();
   const v = JSON.parse(res.result.value);
-  const ok = v.toolbarTools === 0 && v.leftTools === 1 && v.toolCount === 12 && v.toolsBeforeOptions && v.titles[0] === 'Tools';
+  const ok = v.toolbarTools === 0 && v.leftTools === 1 && v.toolCount === 13 && v.toolsBeforeOptions && v.titles[0] === 'Tools';
   console.log(ok ? 'RESULT: PASS' : 'RESULT: FAIL');
   process.exit(ok ? 0 : 1);
 })().catch(e => { console.log('ERR ' + e.message); process.exit(1); });

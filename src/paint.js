@@ -66,6 +66,7 @@
   var selScratchCv = null;     // masked-stroke scratch: copy of the active layer that brush/
   var selScratchCtx = null;    // eraser/line/shape dabs draw into while a selection exists
   var selScratchLayer = null;  // the layer the scratch was taken from
+  var selScratchOrig = null;   // pre-stroke layer copy (eraser strokes only): pins the erased spots
   var cropRect = null;         // {x,y,w,h} in work coords
   var xfrm = null;             // free-transform state
   var toolDrag = null;         // generic drag state for shape/move tools
@@ -598,7 +599,15 @@
     }
     // Opacity: curve value is a 0..1 multiplier of the preset opacity.
     var oc = kppEval(k.opacityCurve, press, rand);
-    if (isFinite(oc)) op = current.opacity * oc;
+    if (isFinite(oc)) {
+      op = current.opacity * oc;
+      // Light-pressure floor: below the pressure where the Opacity curve
+      // becomes visible, keep a faint mark instead of painting nothing (the
+      // textured WaterC set is blank under ~15% pressure without it).
+      if (k.opacityGate > 0 && press < k.opacityGate) {
+        op = Math.max(op, k.opacityFloor || 0.15);
+      }
+    }
     // Rotation: curve value is a fraction of 360 degrees added to the base.
     if (k.used.rotation) {
       var rc = kppEval(k.rotationCurve, press, rand);
@@ -965,7 +974,11 @@
             var rr = clamp(Math.max(1, Math.round(r)), 1, 24);
             var gx = Math.round(clamp(x, rr, workW - 1 - rr));
             var gy = Math.round(clamp(y, rr, workH - 1 - rr));
-            var sdata = paintCtx.getImageData(gx - rr, gy - rr, rr * 2 + 1, rr * 2 + 1).data;
+            // During a masked stroke the scratch holds only the new dabs, so
+            // sample the real layer instead - smudge must pick up the paint
+            // that is already on the canvas inside the selection.
+            var sctx = (selScratchCv && selScratchLayer) ? selScratchLayer.canvas.getContext('2d') : paintCtx;
+            var sdata = sctx.getImageData(gx - rr, gy - rr, rr * 2 + 1, rr * 2 + 1).data;
             var sr = 0, sg = 0, sb = 0, sa = 0, snpx = 0;
             for (var pi3 = 3; pi3 < sdata.length; pi3 += 4) {
               if (sdata[pi3] > 8) { sr += sdata[pi3 - 3]; sg += sdata[pi3 - 2]; sb += sdata[pi3 - 1]; sa += sdata[pi3]; snpx++; }
@@ -1976,6 +1989,39 @@
         sharpness: kppOn('Sharpness')
       }
     };
+    // Light-pressure "gate" for textured/hard presets (the WaterC set): a
+    // multiply-mode Opacity curve that starts from (near) zero scales the dab
+    // opacity toward nothing on light tablet presses, so a normal light stroke
+    // paints no visible mark at all. Give such curves a faint, still-visible
+    // floor below the gate pressure - the same treatment the MyPaint sketch
+    // pencils already get in mypaintDab.
+    if (kpp.used.opacity && kpp.opacityCurve && kpp.opacityCurve.enabled && kpp.opacityCurve.mode === 0) {
+      var opSens = (kpp.opacityCurve.sensors || []).filter(function (s) { return typeof s.id === 'string' && s.id.indexOf('pressure') === 0; })[0];
+      var opPts = opSens && Array.isArray(opSens.pts) ? opSens.pts : null;
+      if (opPts && opPts.length >= 2) {
+        var opMin = Infinity;
+        for (var oi3 = 0; oi3 < opPts.length; oi3++) if (opPts[oi3][1] < opMin) opMin = opPts[oi3][1];
+        if (opMin < 0.05) {   // the curve ramps up from (near) zero: pressure-gated
+          // gate = the pressure where the curve first becomes visible (crosses
+          // 0.15), interpolated along the segment that contains the crossing.
+          var oGate = 0;
+          for (var oi4 = 1; oi4 < opPts.length; oi4++) {
+            var yA = opPts[oi4 - 1][1], yB = opPts[oi4][1];
+            if (yB >= 0.15) {
+              var xA = opPts[oi4 - 1][0], xB = opPts[oi4][0];
+              if (yA >= 0.15) oGate = xA;
+              else if (yB - yA > 0) oGate = xA + (xB - xA) * (0.15 - yA) / (yB - yA);
+              else oGate = xB;
+              break;
+            }
+          }
+          if (isFinite(oGate) && oGate > 0.03 && oGate < 0.95) {
+            kpp.opacityGate = oGate;
+            kpp.opacityFloor = 0.15;   // faint but clearly visible light-pressure mark
+          }
+        }
+      }
+    }
     // Scatter base value + axis (Krita ScatterValue is a distance in px at 100%?)
     var scv = paramNum(params.scattervalue, NaN);
     if (isFinite(scv)) kpp.scatter = scv;
@@ -2280,6 +2326,7 @@
       recordUndo();
       state.assets.push({ img: url, name: name, w: workW, h: workH, paintLayers: layers });
       renderAssets();
+      paintBaselineURL = url;   // the drawing is now saved: no leave prompt
       toast('Added to library · ' + name);
     });
   }
@@ -2315,6 +2362,9 @@
         renderAll();
         scheduleGenerate();
       }
+      // The canvas is now saved, so leaving the paint editor right after must
+      // not raise the unsaved-changes prompt.
+      paintBaselineURL = url;
       toast('Keyframe updated');
     } else if (editAsset) {
       commitLibraryAsset(editAsset);
@@ -2345,8 +2395,9 @@
       if (!l.visible) return;
       var src = l.canvas;
       // during a masked stroke, show the scratch in place of the active layer
-      // so the preview never bleeds (mirrors commitSelScratch: eraser/hard
-      // strokes replace the selection region, soft brush strokes overlay it)
+      // so the preview never bleeds (mirrors commitSelScratch: brushes overlay
+      // the mask-clipped dabs - untouched pixels composite as an identity - and
+      // erasers carve only the erased spots)
       if (l === selScratchLayer && selScratchCv) {
         var tmp = document.createElement('canvas');
         tmp.width = workW; tmp.height = workH;
@@ -2357,14 +2408,24 @@
         var tm = masked.getContext('2d');
         tm.drawImage(selScratchCv, 0, 0);
         if (selMaskCv) { tm.globalCompositeOperation = 'destination-in'; tm.drawImage(selMaskCv, 0, 0); }
-        var eraserStroke = !!(eraserOn || (current && current.eraser));
-        if (eraserStroke || !(sel && sel.feather > 0)) {
+        if ((eraserOn || (current && current.eraser)) && selScratchOrig && selMaskCv) {
+          var holes = document.createElement('canvas');
+          holes.width = workW; holes.height = workH;
+          var hg = holes.getContext('2d');
+          hg.drawImage(selScratchOrig, 0, 0);
+          hg.globalCompositeOperation = 'destination-out';
+          hg.drawImage(selScratchCv, 0, 0);
+          hg.globalCompositeOperation = 'destination-in';
+          hg.drawImage(selMaskCv, 0, 0);
           tg.save();
           tg.globalCompositeOperation = 'destination-out';
-          tg.drawImage(selMaskCv, 0, 0);
+          tg.drawImage(holes, 0, 0);
           tg.restore();
+        } else {
+          // brush/line/shape: preview = layer + the mask-clipped new dabs
+          // (the masked scratch holds only the dabs, never the layer itself)
+          tg.drawImage(masked, 0, 0);
         }
-        tg.drawImage(masked, 0, 0);
         src = tmp;
       }
       paintDispCtx.globalAlpha = l.opacity;
@@ -3024,11 +3085,31 @@
     if (!asyncLoad) { paintBaselineURL = canvasToURL(); paintReady = true; }
   }
 
+  // ---- leaving the paint editor ---------------------------------------------
+  // Closing reports unsaved changes and asks first (the Back button and Esc go
+  // through this). Library-asset edits are excluded: closing those auto-commits
+  // them (see closePaint), so nothing can be lost. A saved baseline (opened /
+  // saved to the library / keyframe updated) means no prompt either.
+  function requestClosePaint() {
+    if (editAsset || !paintReady || canvasToURL() === paintBaselineURL) { closePaint(); return; }
+    var d = byId('paintLeaveDialog');
+    if (!d) { closePaint(); return; }
+    d.classList.remove('hidden');
+  }
+
+  function confirmLeavePaint(leave) {
+    var d = byId('paintLeaveDialog');
+    if (d) d.classList.add('hidden');
+    if (leave) closePaint();
+  }
+
   function closePaint() {
+    var ld = byId('paintLeaveDialog');
+    if (ld) ld.classList.add('hidden');
     if (drawing) { drawing = false; if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
     stopAnts();
     sel = null; selMaskCv = null; selDrag = null;
-    selScratchCv = null; selScratchCtx = null; selScratchLayer = null;
+    selScratchCv = null; selScratchCtx = null; selScratchLayer = null; selScratchOrig = null;
     if (activeLayer) paintCtx = activeLayer.canvas.getContext('2d');
     cropRect = null; xfrm = null; toolDrag = null;
     // Editing a library asset IS saving: push the result back automatically so
@@ -3094,7 +3175,7 @@
     brushList = defaultBrushes();
     current = defaultBrush();
 
-    byId('btnPaintClose').addEventListener('click', closePaint);
+    byId('btnPaintClose').addEventListener('click', requestClosePaint);
     var openBtn = byId('btnPaint');
     if (openBtn) openBtn.addEventListener('click', function () { openPaint(); });
     var kfPaint = byId('btnKfPaint');
@@ -3285,8 +3366,10 @@
         // Esc first cancels an active crop/transform/selection (handled in the
         // extra-tools handler); if none is active, it closes the tool. We let
         // that handler run and only close when nothing else consumed it.
+        var ld2 = byId('paintLeaveDialog');
+        if (ld2 && !ld2.classList.contains('hidden')) { confirmLeavePaint(false); e.preventDefault(); return; }
         if (cropRect || xfrm || sel) return; // let wireExtraTools handle it
-        closePaint();
+        requestClosePaint();
       }
       else if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undoStroke(); }
       else if (mod && e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); redoStroke(); }
@@ -3421,6 +3504,13 @@
     } else if (tool === 'brush') {
       eraserOn = false;
       var er2 = byId('paintEraser'); if (er2) er2.checked = false;
+    }
+    // The lasso button means freehand lasso; the mode dropdown (shared by the
+    // select + lasso tools) can switch it to rectangle/ellipse afterwards.
+    if (tool === 'lasso') {
+      selMode = 'lasso';
+      var dm = byId('paintSelMode');
+      if (dm) dm.value = 'lasso';
     }
     // cancel any in-progress crop / transform / selection drag
     cancelCrop();
@@ -3743,9 +3833,9 @@
     // kept so the outline does not flicker, and is replaced when the drag
     // produces a shape (or cleared if the drag never becomes one). Moving the
     // selected content is the Move tool's job (V), which mounts the same
-    // selDrag engine via beginSelMove.
-    var mode = paintTool === 'lasso' ? 'lasso' : (selMode || 'rect');
-    selDrag = { mode: 'draw', type: mode, sx: p.x, sy: p.y, pts: [{ x: p.x, y: p.y }] };
+    // selDrag engine via beginSelMove. The shape comes from the mode dropdown
+    // (rectangle / ellipse / freehand lasso), shared by the select + lasso tools.
+    selDrag = { mode: 'draw', type: (selMode || 'rect'), sx: p.x, sy: p.y, pts: [{ x: p.x, y: p.y }] };
   }
 
   function selMove(p) {
@@ -3859,46 +3949,75 @@
 
   // ---- masked painting ------------------------------------------------------
   // With a live selection, brush/eraser strokes and line/shape drags are drawn
-  // into a scratch canvas that starts as a copy of the active layer; the result
-  // is displayed (and committed) clipped to the selection mask, so strokes can
-  // never bleed outside the selection - same as Krita painting with a selection.
+  // into a scratch canvas; the stroke is displayed (and committed) clipped to
+  // the selection mask so it can never bleed outside - same as Krita painting
+  // with a selection. The scratch holds ONLY the new dabs for brush/line/shape
+  // strokes: the commit overlays the mask-clipped dabs on the layer, so pixels
+  // the stroke never touched keep their exact alpha. (Re-blitting a scratch
+  // that also contained a copy of the layer re-composited every semi-transparent
+  // pixel inside the selection on every stroke, so faint brushes like the
+  // sketch pencils looked like they were being copied over and over.) Eraser
+  // strokes are the exception: their dabs must remove paint, so the scratch (and
+  // the pinned pre-stroke copy) hold the layer content and the commit carves
+  // exactly the erased spots.
   function beginSelScratch() {
-    selScratchCv = null; selScratchCtx = null; selScratchLayer = null;
+    selScratchCv = null; selScratchCtx = null; selScratchLayer = null; selScratchOrig = null;
     if (!selMaskCv || !activeLayer) return;
     var cv = document.createElement('canvas');
     cv.width = workW; cv.height = workH;
     var c = cv.getContext('2d');
-    c.drawImage(activeLayer.canvas, 0, 0);
+    if (eraserOn || (current && current.eraser)) {
+      c.drawImage(activeLayer.canvas, 0, 0);
+      // pin the pre-stroke pixels so the commit can carve the erased spots
+      var oc = document.createElement('canvas');
+      oc.width = workW; oc.height = workH;
+      oc.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
+      selScratchOrig = oc;
+    }
     selScratchCv = cv; selScratchCtx = c; selScratchLayer = activeLayer;
     paintCtx = c;
   }
 
-  // Blit the (masked) scratch onto the active layer and drop it. Used for the
+  // Commit the masked scratch onto the active layer and drop it. Used for the
   // live preview of line/shape drags and to commit brush/eraser strokes.
+  //
+  // A BRUSH/line/shape stroke holds only the new dabs (beginSelScratch), so
+  // overlaying the mask-clipped dabs adds the paint without touching anything
+  // else: pixels the stroke never covered keep their exact alpha, stroke after
+  // stroke. An ERASER stroke carves only the erased spots (pre-stroke minus
+  // scratch, clipped to the mask) out of the layer.
   function commitSelScratch() {
     if (!selScratchCv) return;
     var sc = selScratchCv;
-    selScratchCv = null; selScratchCtx = null; selScratchLayer = null;
+    var orig = selScratchOrig;
+    selScratchCv = null; selScratchCtx = null; selScratchLayer = null; selScratchOrig = null;
     paintCtx = activeLayer ? activeLayer.canvas.getContext('2d') : null;
     if (!activeLayer) return;
-    var tmp = document.createElement('canvas');
-    tmp.width = workW; tmp.height = workH;
-    var t = tmp.getContext('2d');
-    t.drawImage(sc, 0, 0);
-    if (selMaskCv) { t.globalCompositeOperation = 'destination-in'; t.drawImage(selMaskCv, 0, 0); }
     var ctx = activeLayer.canvas.getContext('2d');
     var eraserStroke = !!(eraserOn || (current && current.eraser));
-    // Erasing (or any hard-edged stroke) must REPLACE the layer inside the
-    // selection - holes overlaid on top would just show the old pixels
-    // beneath. Soft brush strokes overlay instead, so a feathered fringe
-    // keeps the underlying art intact.
-    if (eraserStroke || !(sel && sel.feather > 0)) {
+    if (eraserStroke && orig && selMaskCv) {
+      // the holes = pre-stroke pixels the eraser removed, limited to the
+      // selection; carve exactly those out of the layer
+      var holes = document.createElement('canvas');
+      holes.width = workW; holes.height = workH;
+      var hg = holes.getContext('2d');
+      hg.drawImage(orig, 0, 0);
+      hg.globalCompositeOperation = 'destination-out';
+      hg.drawImage(sc, 0, 0);
+      hg.globalCompositeOperation = 'destination-in';
+      hg.drawImage(selMaskCv, 0, 0);
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.drawImage(selMaskCv, 0, 0);
+      ctx.drawImage(holes, 0, 0);
       ctx.restore();
+    } else {
+      var tmp = document.createElement('canvas');
+      tmp.width = workW; tmp.height = workH;
+      var t = tmp.getContext('2d');
+      t.drawImage(sc, 0, 0);
+      if (selMaskCv) { t.globalCompositeOperation = 'destination-in'; t.drawImage(selMaskCv, 0, 0); }
+      ctx.drawImage(tmp, 0, 0);
     }
-    ctx.drawImage(tmp, 0, 0);
   }
 
   function selFeatherVal() {
@@ -3915,7 +4034,7 @@
 
   function selectNone() {
     commitSelScratch();   // never strand an in-flight masked stroke
-    sel = null; selMaskCv = null; selDrag = null;
+    sel = null; selMaskCv = null; selDrag = null; selScratchOrig = null;
     stopAnts();
     compositeDisplay();
   }
@@ -4636,6 +4755,12 @@
     var rcl = byId('btnPaintResizeCancel'); if (rcl) rcl.addEventListener('click', function () {
       var d = byId('paintResizeDialog'); if (d) d.classList.add('hidden');
     });
+    // leaving the paint editor with unsaved changes: confirm before closing
+    var ly = byId('btnPaintLeaveYes');
+    if (ly) ly.addEventListener('click', function () { confirmLeavePaint(true); });
+    var ln = byId('btnPaintLeaveNo');
+    if (ln) ln.addEventListener('click', function () { confirmLeavePaint(false); });
+
     // library naming dialog (Enter commits, Esc cancels)
     var nameOk = byId('btnPaintNameOk');
     if (nameOk) nameOk.addEventListener('click', submitNameDialog);
@@ -4700,10 +4825,13 @@
       var mod = e.ctrlKey || e.metaKey;
       var k = e.key.toLowerCase();
       if (e.key === 'Escape') {
+        // A leave-confirm dialog that is already up is dismissed with Esc.
+        var ld3 = byId('paintLeaveDialog');
+        if (ld3 && !ld3.classList.contains('hidden')) { confirmLeavePaint(false); e.preventDefault(); return; }
         if (cropRect) { cancelCrop(); e.preventDefault(); return; }
         if (xfrm) { cancelXfrm(); e.preventDefault(); return; }
         if (sel) { selectNone(); e.preventDefault(); return; }
-        closePaint();
+        requestClosePaint();
         return;
       }
       if (mod && k === 'd') { e.preventDefault(); selectNone(); return; }

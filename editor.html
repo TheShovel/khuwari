@@ -628,7 +628,8 @@
         <div class="spacer"></div>
         <div id="paintEditBanner" class="paint-banner hidden"></div>
         <button id="btnPaintClose" class="btn primary paint-close" type="button" title="Back to the editor (Esc)">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 12v.01"/><path d="M3 21h18"/><path d="M5 21v-16a2 2 0 0 1 2 -2h7.5m2.5 10.5v7.5"/><path d="M14 7h7m-3 -3l3 3l-3 3"/></svg>
+          <!-- log-out icon (Lucide): a door with an arrow leaving it -->
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           <span>Back</span>
         </button>
       </div>
@@ -961,6 +962,18 @@
         <div class="paint-btnrow">
           <button id="btnPaintNameOk" class="btn small primary" type="button">Add to library</button>
           <button id="btnPaintNameCancel" class="btn small" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaving the paint editor with unsaved changes asks first. -->
+    <div id="paintLeaveDialog" class="paint-dialog hidden">
+      <div class="paint-dialog-box">
+        <div class="docker-title">Leave the paint editor?</div>
+        <p class="paint-hint" style="margin-top:6px">Your changes to this drawing haven't been saved. If you leave now, they'll be lost.</p>
+        <div class="paint-btnrow" style="justify-content:flex-end; margin-bottom:0">
+          <button id="btnPaintLeaveYes" class="btn small danger" type="button">Leave anyway</button>
+          <button id="btnPaintLeaveNo" class="btn small primary" type="button">Keep editing</button>
         </div>
       </div>
     </div>

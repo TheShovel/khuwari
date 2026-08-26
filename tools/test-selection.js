@@ -128,6 +128,93 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var shIn = count(255,255,0,50,50,90,90), shOut = count(255,255,0,101,50,150,110);
       pass('shape masked to selection', shIn > 200 && shOut === 0, 'in=' + shIn + ' out=' + shOut);
 
+      // ---------- 4b. repeated strokes inside a lasso never fade existing content ----------
+      // Regression: the old hard-selection commit erased the whole selection and
+      // re-placed the masked scratch, so every stroke inside a lasso re-composited
+      // the anti-aliased fringe at reduced alpha - the fringe (and the content
+      // under it) got more and more transparent stroke after stroke.
+      clear();
+      lc().fillStyle = '#ff0000'; lc().fillRect(5, 5, 110, 110);
+      var circPts = [];
+      for (var cp = 0; cp < 48; cp++) {
+        var ca = cp / 48 * Math.PI * 2;
+        circPts.push({ x: 60 + 45 * Math.cos(ca), y: 60 + 45 * Math.sin(ca) });
+      }
+      sel = { type: 'lasso', path: circPts, feather: 0 };
+      buildSelMask();
+      compositeDisplay();
+      function lassoEdgeStats() {
+        // bands around the two boundary crossings (x≈15 and x≈105 at y=60): the
+        // anti-aliased fringe that the old replace-commit decayed stroke by stroke
+        var dd = lc().getImageData(0, 0, workW, workH).data;
+        var solid = 0, maxA = 0;
+        for (var by2 = 56; by2 <= 64; by2++) {
+          for (var bx = 10; bx <= 20; bx++) {
+            var a1 = dd[(by2 * workW + bx) * 4 + 3];
+            if (a1 > 200) solid++;
+            if (a1 > maxA) maxA = a1;
+          }
+          for (var bx2 = 100; bx2 <= 110; bx2++) {
+            var a2 = dd[(by2 * workW + bx2) * 4 + 3];
+            if (a2 > 200) solid++;
+            if (a2 > maxA) maxA = a2;
+          }
+        }
+        return { solid: solid, maxA: maxA };
+      }
+      var es0 = lassoEdgeStats();
+      pass('lasso fringe starts solid', es0.maxA === 255 && es0.solid > 80, 'solid=' + es0.solid);
+      current = makeBrush('LassoDecay', { radius: 8, opacity: 1, spacing: 0.2, color: '#0000ff' });
+      refreshTip();
+      setPaintTool('brush');
+      drag(0, 60, 120, 60);      // stroke 1 crossing the boundary twice
+      var es1 = lassoEdgeStats();
+      drag(0, 60, 120, 60);      // stroke 2
+      var es2 = lassoEdgeStats();
+      drag(0, 60, 120, 60);      // stroke 3
+      var es3 = lassoEdgeStats();
+      pass('lasso content survives repeated strokes (no fade)',
+        es3.maxA >= es1.maxA && es3.solid >= es1.solid && es1.solid >= es0.solid * 0.9,
+        'solid=' + es0.solid + ',' + es1.solid + ',' + es2.solid + ',' + es3.solid + ' max=' + es1.maxA + '->' + es3.maxA);
+
+      // ---------- 4c. faint strokes inside a selection are never re-composited ----------
+      // Regression: a commit that re-blits a scratch containing a copy of the
+      // layer re-applies every semi-transparent pixel inside the selection, so
+      // faint brushes (e.g. the sketch pencils) got darker with every stroke -
+      // the paint looked like it was being copied over and over inside the
+      // selection. The scratch now holds only the new dabs: pixels the stroke
+      // never covered must keep their exact alpha.
+      clear();
+      current = makeBrush('FaintCopy', { radius: 6, opacity: 0.2, spacing: 0.2, color: '#0000ff' });
+      refreshTip();
+      setPaintTool('brush');
+      drag(50, 90, 200, 90);   // faint first stroke (partial alpha), no selection
+      var ringPts = [];
+      function ringEdge(x0, y0, x1, y1, n) {
+        for (var rk = 0; rk < n; rk++) ringPts.push({ x: x0 + (x1 - x0) * rk / n, y: y0 + (y1 - y0) * rk / n });
+      }
+      ringEdge(30, 60, 220, 60, 12); ringEdge(220, 60, 220, 140, 7);
+      ringEdge(220, 140, 30, 140, 12); ringEdge(30, 140, 30, 60, 7);
+      sel = { type: 'lasso', path: ringPts, feather: 0 };
+      buildSelMask();
+      compositeDisplay();
+      function faintAvg(y0, y1) {
+        var dd = lc().getImageData(45, y0, 160, y1 - y0).data;
+        var n = 0, sum = 0;
+        for (var fi = 3; fi < dd.length; fi += 4) if (dd[fi] > 20 && dd[fi] < 200) { n++; sum += dd[fi]; }
+        return n ? sum / n : 0;
+      }
+      var fa0 = faintAvg(84, 96);   // the first stroke's band
+      current = makeBrush('FaintCopy2', { radius: 6, opacity: 0.5, spacing: 0.2, color: '#00ff00' });
+      refreshTip();
+      drag(50, 118, 200, 118);      // second stroke inside the lasso
+      var fa1 = faintAvg(84, 96);
+      drag(50, 126, 200, 126);      // third stroke inside the lasso
+      var fa2 = faintAvg(84, 96);
+      pass('semi-transparent content is not re-composited by later strokes',
+        Math.abs(fa0 - fa1) < 3 && Math.abs(fa1 - fa2) < 3,
+        'avg=' + fa0 + ' -> ' + fa1 + ' -> ' + fa2);
+
       // ---------- 5. fill limited to selection (contiguous) ----------
       clear();
       lc().fillStyle = '#ffffff'; lc().fillRect(0, 0, workW, workH);
@@ -215,15 +302,22 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       click(150, 150);   // click empty space, no drag
       pass('clicking empty space deselects', !sel, 'sel=' + (sel ? 'still-selected' : 'cleared'));
 
-      // ---------- 10b. the mode dropdown really switches shapes, even when the
-      // drag starts on top of the old selection ----------
+      // ---------- 10b. the mode dropdown drives the shape (real change event),
+      // including from the LASSO tool button ----------
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);   // a rect selection exists
-      document.getElementById('paintSelMode').value = 'ellipse';
-      selMode = 'ellipse';
+      var modeDD = document.getElementById('paintSelMode');
+      modeDD.value = 'ellipse';
+      modeDD.dispatchEvent(new Event('change', { bubbles: true }));
       drag(50, 50, 110, 110);       // drag starting INSIDE the old rect
-      pass('dropdown ellipse mode draws an ellipse', !!sel && sel.type === 'ellipse', 'type=' + (sel && sel.type));
+      pass('dropdown ellipse draws an ellipse', !!sel && sel.type === 'ellipse', 'type=' + (sel && sel.type));
+      setPaintTool('lasso');        // the lasso button resets the mode to freehand
+      pass('lasso button sets freehand mode', selMode === 'lasso' && modeDD.value === 'lasso', 'selMode=' + selMode);
+      modeDD.value = 'rect';
+      modeDD.dispatchEvent(new Event('change', { bubbles: true }));
+      drag(60, 130, 160, 180);
+      pass('lasso tool follows the dropdown to rect', !!sel && sel.type === 'rect', 'type=' + (sel && sel.type));
 
       // ---------- 11. feathered selection still masks the brush ----------
       clear();
@@ -285,7 +379,57 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       applyProjectData(saved);
       pass('project load restores colorHistory', Array.isArray(state.colorHistory) && state.colorHistory[0] === '#abcdef', 'first=' + state.colorHistory[0]);
 
-      // ---------- 14. leaving the page with unsaved work asks for confirmation ----------
+      // ---------- 14. textured hard brushes: light pen pressure still paints ----------
+      // The WaterC set's Opacity option is a 0->1 pressure ramp, so a light
+      // tablet press used to multiply toward zero opacity and lay nothing down.
+      // A faint floor (kpp.opacityGate/opacityFloor from parseKppBytes) keeps a
+      // visible mark below the gate pressure.
+      var wc = brushList.filter(function (x) { return x.name.indexOf('Round-Grain') >= 0; })[0];
+      if (wc && wc.kpp && wc.kpp.opacityGate > 0) {
+        clear();
+        selectNone();   // a stale masked selection would clip the stroke out
+        current = wc;
+        refreshTip();
+        setPaintTool('brush');
+        var pR = cv.getBoundingClientRect();
+        var pEv = function (type, wx, wy, press) {
+          var ee = new PointerEvent(type, { bubbles: true, cancelable: true, clientX: pR.left + wx * pR.width / workW, clientY: pR.top + wy * pR.height / workH, pointerId: 9, pointerType: 'pen', pressure: press, button: 0, buttons: 1, timeStamp: performance.now() });
+          cv.dispatchEvent(ee);
+        };
+        pEv('pointerdown', 80, 60, 0.08);
+        for (var pj = 1; pj <= 20; pj++) pEv('pointermove', 80 + 120 * pj / 20, 60, 0.08);
+        pEv('pointerup', 200, 60, 0.08);
+        var dLow = lc().getImageData(60, 40, 160, 40).data, lowMax = 0;
+        for (var lj = 3; lj < dLow.length; lj += 4) if (dLow[lj] > lowMax) lowMax = dLow[lj];
+        pass('light-pressure textured brush lays a visible mark', lowMax > 20, 'maxA=' + lowMax);
+      } else {
+        pass('bundled WaterC brush loaded with a pressure gate', false, 'found=' + (!!wc) + ' gate=' + (wc && wc.kpp && wc.kpp.opacityGate));
+      }
+
+      // ---------- 15. the paint editor's Back button confirms before losing work ----------
+      clear();
+      var leaveDlg = document.getElementById('paintLeaveDialog');
+      pass('leave dialog exists', !!leaveDlg);
+      // canvas equals the open baseline: closing is silent (force the baseline
+      // - earlier sections left extra layers/art in this session)
+      paintBaselineURL = canvasToURL();
+      document.getElementById('btnPaintClose').click();
+      pass('clean paint closes without a prompt', paintOpen === false, 'paintOpen=' + paintOpen);
+      // reopen + paint something: Back asks first
+      document.getElementById('btnPaint').click();
+      pass('paint reopened', paintOpen === true);
+      lc().fillStyle = '#00ff00'; lc().fillRect(20, 20, 30, 30);
+      compositeDisplay();
+      document.getElementById('btnPaintClose').click();
+      pass('unsaved paint asks before leaving', paintOpen === true && !leaveDlg.classList.contains('hidden'), 'paintOpen=' + paintOpen + ' dlgShown=' + !leaveDlg.classList.contains('hidden'));
+      document.getElementById('btnPaintLeaveNo').click();
+      pass('keep editing dismisses the dialog and stays', paintOpen === true && leaveDlg.classList.contains('hidden'));
+      document.getElementById('btnPaintClose').click();
+      pass('Back asks again after keeping editing', !leaveDlg.classList.contains('hidden'));
+      document.getElementById('btnPaintLeaveYes').click();
+      pass('leave anyway closes the paint editor', paintOpen === false, 'paintOpen=' + paintOpen);
+
+      // ---------- 16. leaving the page with unsaved work asks for confirmation ----------
       var leavePrompt = function () { var e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; };
       captureSavedBaseline();
       pass('clean project does not prompt on leave', leavePrompt() === false);

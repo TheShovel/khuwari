@@ -1840,7 +1840,9 @@ button:focus-visible {
 .paint-color-wrap { display: block; width: 26px; height: 26px; flex: 0 0 auto;
   border-radius: 6px; border: 1px solid var(--border);
   background: var(--bg); cursor: default; }
-.paint-close { margin-left: 2px; padding: 7px 14px; font-weight: 600; gap: 7px; }
+.paint-close { margin-left: 2px; padding: 8px 18px; font-weight: 700; gap: 8px;
+  font-size: 13px; box-shadow: 0 1px 8px rgba(138, 163, 185, 0.35); }
+.paint-close svg { width: 17px; height: 17px; }
 
 /* Main workspace row. */
 .paint-body { display: flex; min-height: 0; flex: 1; }
