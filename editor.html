@@ -653,6 +653,9 @@
             <button id="btnPaintToolLasso" class="paint-tool" type="button" title="Lasso select (L)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 0 7 2 7 5s-3 5-7 5-7-2-7-5 3-5 7-5z"/><path d="M5 13c-1 2 0 4 2 4 2 0 2-2 5-2 2 0 4 1 4 3 0 2-2 3-5 3"/></svg>
             </button>
+            <button id="btnPaintToolWand" class="paint-tool" type="button" title="Wand select (W)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 10V8M11.5 5.5h2M18.5 5.5h2"/><path d="M4 19.5 14.5 9a1.4 1.4 0 0 1 2 2L6 21.5l-1.8-.6z"/><path d="M18 14l1.2 1.2M19.5 19.5l1.2 1.2M14 18.5l1.2-1.2"/></svg>
+            </button>
             <button id="btnPaintToolMove" class="paint-tool" type="button" title="Move tool (V)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/><path d="M2 12h20M12 2v20"/></svg>
             </button>
@@ -711,6 +714,10 @@
             <label class="paint-field">Feather <span id="paintSelFeatherVal" class="mono">0px</span>
               <input id="paintSelFeather" class="slider" type="range" min="0" max="64" step="1" value="0">
             </label>
+            <label class="paint-field">Wand tolerance <span id="paintWandTolVal" class="mono">8</span>
+              <input id="paintWandTol" class="slider" type="range" min="0" max="255" step="1" value="8">
+            </label>
+            <label class="paint-check"><input id="paintWandContiguous" type="checkbox" checked> Wand contiguous</label>
             <div class="paint-btnrow">
               <button id="btnPaintSelAll" class="btn small" type="button">All</button>
               <button id="btnPaintSelNone" class="btn small" type="button">None</button>
@@ -721,7 +728,7 @@
               <button id="btnPaintSelGrow" class="btn small" type="button" title="Expand selection by feather px">Grow</button>
               <button id="btnPaintSelShrink" class="btn small" type="button" title="Shrink selection by feather px">Shrink</button>
             </div>
-            <p class="paint-hint">Drag to select. Drag inside to move the selection content. Shift+click adds to selection.</p>
+            <p class="paint-hint">Drag to select, drag inside to move content. Wand: click pixels to select. Painting, erase &amp; fill stay inside the selection.</p>
           </div>
           <div id="paintToolOptsCrop" class="paint-toolopts hidden">
             <p class="paint-hint">Drag a rectangle to crop. Double-click or press Enter to apply, Esc to cancel.</p>
@@ -735,14 +742,14 @@
               <input id="paintFillTol" class="slider" type="range" min="0" max="255" step="1" value="8">
             </label>
             <label class="paint-check"><input id="paintFillContiguous" type="checkbox" checked> Contiguous</label>
-            <label class="paint-check"><input id="paintFillUseSel" type="checkbox"> Limit to selection</label>
+            <label class="paint-check"><input id="paintFillUseSel" type="checkbox" checked> Limit to selection</label>
           </div>
           <div id="paintToolOptsShape" class="paint-toolopts hidden">
             <label class="paint-check"><input id="paintShapeFill" type="checkbox"> Fill shape</label>
             <label class="paint-check"><input id="paintShapeSquare" type="checkbox"> Constrain (Shift)</label>
           </div>
           <div id="paintToolOptsMove" class="paint-toolopts hidden">
-            <p class="paint-hint">Drag to move the active layer content. Hold Alt to duplicate.</p>
+            <p class="paint-hint">With a selection, drag moves just the selected content. Otherwise the whole layer moves. Hold Alt to duplicate.</p>
           </div>
                 <div id="paintToolOptsTransform" class="paint-toolopts hidden">
                   <p class="paint-hint">Drag corners to scale, outside to rotate, inside to move. Double-click to commit, Esc to cancel.</p>
