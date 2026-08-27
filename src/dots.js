@@ -44,7 +44,7 @@
   }
 
   function dotDefaults() {
-    return { color: '#4f8fff', threshold: 0.5, grow: 1, dur: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom' };
+    return { color: '#4f8fff', threshold: 0.5, grow: 1, dur: 0.2, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom' };
   }
 
   // Add a dot at normalized canvas coords (0..1) to a fill layer, active from

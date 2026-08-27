@@ -85,7 +85,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       t('copiedDot remembers settings', !!copiedDot && copiedDot.color === '#123456' && copiedDot.threshold === 0.7 &&
         copiedDot.grow === 3 && copiedDot.gradOn && copiedDot.gradColor === '#ff00ff' &&
         copiedDot.gradHeight === 12 && copiedDot.gradDir === 'left' &&
-        copiedDot.x === 0.3 && copiedDot.y === 0.4 && +copiedDot.dur.toFixed(3) === 1 &&
+        copiedDot.x === 0.3 && copiedDot.y === 0.4 && +copiedDot.dur.toFixed(3) === 0.2 &&
         copiedDot.layer === fillId);
 
       // 3) right-click the fill lane (empty space) -> paste dot at clicked time
