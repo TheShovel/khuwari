@@ -1,6 +1,8 @@
 // Verify the paint tool UI renders: check new tool buttons, tool option panels,
 // overlay canvas, dialogs, and computed styles.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -18,7 +20,7 @@ function cdpFetch(p) { return new Promise((res, rej) => { http.get({ host: '127.
 function cdp(ws, id, method, params) { return new Promise((res, rej) => { const h = ev => { const m = JSON.parse(ev.data); if (m.id === id) { ws.removeEventListener('message', h); m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result); } }; ws.addEventListener('message', h); ws.send(JSON.stringify({ id, method, params: params || {} })); }); }
 (async () => {
   await new Promise(r => server.listen(PORT, r));
-  const ch = spawn('chromium', ['--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--remote-debugging-port=' + CDP_PORT, 'about:blank'], { stdio: 'ignore' });
+  const ch = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--remote-debugging-port=' + CDP_PORT, 'about:blank'], { stdio: 'ignore' });
   let targets = null;
   for (let i = 0; i < 50; i++) { try { targets = JSON.parse(await cdpFetch('/json')); if (targets.length) break; } catch (e) {} await new Promise(r => setTimeout(r, 200)); }
   const pg = targets.find(t => t.type === 'page');

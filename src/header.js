@@ -1,14 +1,8 @@
-/* The editor is split into the files in src/, loaded as plain scripts in order.
- *
- * Khuwari, the browser animation tool. Places keyframe images on a timeline
- * at arbitrary times; each gap between two keyframes is filled with
- * interpolated frames, one per tick of the gap (gapSeconds * FPS - 1 frames).
- * The default gap mode runs a local machine learning model (RIFE via ONNX
- * Runtime Web, see model.js) in the browser; a pure-JS mesh warp engine (see
- * morph.js) is the fallback when the model can't be loaded, and
- * squash-and-stretch and no-interpolation modes are per-gap options. Static
- * site, no server, no GPU.
- */
+// Khuwari, a browser animation tool; no build step. The src/*.js files load
+// as plain scripts into one global scope, one file per concern. boot()
+// starts everything in header/state/footer order: header defines the globals,
+// state.js holds the model, footer.js calls boot(). Gaps between keyframes
+// are interpolated with a local RIFE model when it loads, else a JS mesh warp.
 'use strict';
 
 var morph = window.KHUWARI_MORPH;

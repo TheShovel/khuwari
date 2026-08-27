@@ -12,6 +12,8 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { assertChrome } = require('../tools/chrome');
+const CHROME = assertChrome();
 
 const ROOT = path.resolve(__dirname, '..');
 const URL = process.env.SHOOT_URL || 'http://localhost:4000/editor.html';
@@ -22,7 +24,7 @@ function R0full() { return { x: 0, y: 0, w: VIEW_W, h: VIEW_H }; }
 
 fs.mkdirSync(OUT, { recursive: true });
 
-// ---------- CDP plumbing ----------
+// CDP plumbing
 class CDP {
   constructor(ws) {
     this.ws = ws;
@@ -102,7 +104,7 @@ async function pageEval(expr) {
   return ev(expr, true);
 }
 
-// ---------- page-side art + helpers ----------
+// page-side art + helpers
 const ART = `
 window.__art = {
   char: function (x, color) {
@@ -248,7 +250,7 @@ window.__colorFill = function () {
 
 module.exports = { ART };
 
-// ---------- shots ----------
+// shots
 async function setupAndWait(fn) {
   await pageEval('(function(){' + ART + fn + '})()');
   // warm the image cache so the preview renders synchronously
@@ -288,7 +290,7 @@ async function genSquash(blurOn) {
 }
 
 async function main() {
-  const chrome = spawn('chromium', [
+  const chrome = spawn(CHROME, [
     '--headless=new', '--no-sandbox', '--disable-gpu',
     '--remote-debugging-port=' + PORT,
     '--remote-allow-origins=*',
@@ -328,7 +330,7 @@ async function main() {
   // Warm the art + helper functions once.
   await pageEval(ART);
 
-  // ---- shots ----
+  // shots
   await setupAndWait('__hero();');
   const R = {};
   for (const sel of ['leftCol', 'previewCol', 'rightCol', 'timelineCol']) {

@@ -4,6 +4,8 @@
 //   2. elliptical_dab_ratio/angle (markers draw elongated dabs at speed)
 //   3. smudge (wet/marker brushes pick up the canvas colour under the dab)
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -28,15 +30,20 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
 function log(msg){ lines.push(msg); console.log('VERIFY ' + msg); }
 async function fetchU8(p){ const r = await fetch(p); if(!r.ok) throw new Error('HTTP '+r.status+' '+p); return new Uint8Array(await r.arrayBuffer()); }
 async function main(){
-  // ---- 1 + 3: Wet_Paint_Plus uses the CURRENT colour (Krita overrides
+  // 1 + 3: Wet_Paint_Plus uses the CURRENT colour (Krita overrides
   // color_h/s/v with the foreground colour via setColor); Marker smudge +
-  // elliptical ----
+  // elliptical
   const wp = await parseMybBytes('wp', await fetchU8('/brushes/i)_Wet_Paint_Plus_(mypaint).myb'), null);
   current = wp; current.color = '#123456'; eraserOn = false; refreshTip();
   myStrokeInit({x:100,y:100,press:1}); // real strokes always init stroke state
@@ -76,7 +83,7 @@ function cdpFetch(pathname){ return new Promise((resolve,reject)=>{ http.get({ho
 function cdp(ws,id,method,params){ return new Promise((resolve,reject)=>{ const h=ev=>{const m=JSON.parse(ev.data); if(m.id===id){ws.removeEventListener('message',h); m.error?reject(new Error(JSON.stringify(m.error))):resolve(m.result);}}; ws.addEventListener('message',h); ws.send(JSON.stringify({id,method,params:params||{}})); }); }
 async function run(){
   await new Promise(r=>server.listen(PORT,r));
-  chromium = spawn('chromium', ['--headless=new','--disable-gpu','--no-sandbox','--disable-extensions','--remote-debugging-port='+CDP_PORT,'about:blank'], {stdio:['ignore','ignore','pipe']});
+  chromium = spawn(CHROME, ['--headless=new','--disable-gpu','--no-sandbox','--disable-extensions','--remote-debugging-port='+CDP_PORT,'about:blank'], {stdio:['ignore','ignore','pipe']});
   let errOut=''; chromium.stderr.on('data',d=>errOut+=d);
   let targets=null;
   for(let i=0;i<50;i++){ try{ targets=JSON.parse(await cdpFetch('/json')); if(targets.length) break; }catch(e){} await new Promise(r=>setTimeout(r,200)); }

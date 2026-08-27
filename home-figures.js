@@ -1,7 +1,5 @@
-/* Home page feature figures: short looping animations of each feature (a mouse
- * cursor performing the action) plus the app behind it, captured with
- * site_tools/animate.js and encoded to GIF. Injected into the .feat-shot
- * containers on the home page by site.js. */
+/* Home page feature figures: short looping animations of each feature,
+ * injected into the .feat-shot containers on the home page by site.js. */
 window.HOME_FIGS = {
   ml: `<img class="fig-img" src="shots/ml.gif" alt="A keyframe dragged onto the timeline, then the machine generates the inbetweens between the frames" width="640">`,
   paint: `<img class="fig-img" src="shots/paint.gif" alt="A mouse cursor drawing a stroke on the canvas with the brush in the paint tool" width="640">`,

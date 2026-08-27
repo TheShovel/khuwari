@@ -326,7 +326,6 @@
       loadModelWithOverlay();
     });
 
-    // selected keyframe time
     el.selTimeInput.addEventListener('change', function () {
       var kf = state.keyframes.find(function (k) { return k.id === state.selectedId; });
       if (!kf) return;
@@ -349,8 +348,7 @@
       renderPreview();
     });
 
-    // (timeline zoom buttons were removed from Settings; Ctrl+wheel on the
-    // timeline still zooms, and the canvas wheel/dblclick handle the viewport)
+    // Ctrl+wheel zooms the timeline; the canvas wheel/dblclick handle the viewport
 
     // viewport zoom / pan (preview canvas)
     el.previewCanvas.addEventListener('wheel', function (e) {
@@ -387,7 +385,6 @@
           var w = screenToWorld(nx, ny, cam);
           var hit = dotAt(w.x, w.y, active);
           if (hit) {
-            // Drag the dot under the cursor to reposition it.
             state.selectedDotId = hit.id;
             dotDragState = { dot: hit, startNX: w.x, startNY: w.y, startPX: hit.x, startPY: hit.y, moved: false };
             renderLane();
@@ -430,7 +427,6 @@
         return;
       }
       if (!panState || (pinch && pinch.a && pinch.b)) return;
-      // Drag-pan: scroll the wrap 1:1 with the cursor (CSS px).
       el.previewWrap.scrollLeft -= e.clientX - panState.x;
       el.previewWrap.scrollTop -= e.clientY - panState.y;
       panState = { x: e.clientX, y: e.clientY };
@@ -542,9 +538,11 @@
       if (e.target.closest('.lane')) startScrub(e);
     });
 
-    // Right-click on the timeline: a keyframe chip gets copy / paste / delete;
-    // empty lane space gets paste (into that layer at the clicked time). The
-    // browser's default context menu stays off for the lane so ours can appear.
+    // Right-click on the timeline: a keyframe chip gets copy / paste / delete,
+    // a color-dot chip gets the same (paste drops a dot at the playhead);
+    // empty lane space gets paste into that layer at the clicked time — dots
+    // on a fill layer, keyframes on a normal one. The browser's default
+    // context menu stays off for the lane so ours can appear.
     el.timeline.addEventListener('contextmenu', function (e) {
       var chip = e.target.closest('.kf');
       if (chip) {
@@ -554,37 +552,56 @@
         return;
       }
       var dotEl = e.target.closest('.fill-dot');
-      if (dotEl) { e.preventDefault(); return; } // dots have their own flow
+      if (dotEl) {
+        e.preventDefault();
+        selectDot(dotEl.dataset.dot);
+        showKfMenu(e.clientX, e.clientY, null, state.playhead, null, dotEl.dataset.dot, true);
+        return;
+      }
       var row = e.target.closest('.layer-row');
       if (row && row.dataset.layer && row.dataset.layer !== '') {
         e.preventDefault();
         var t = insertTime(timeFromClientX(e.clientX));
-        showKfMenu(e.clientX, e.clientY, null, t, row.dataset.layer);
+        var rowLayer = layerById(row.dataset.layer);
+        showKfMenu(e.clientX, e.clientY, null, t, row.dataset.layer, null, !!(rowLayer && rowLayer.type === 'fill'));
       }
     });
     el.kfMenuCopy.addEventListener('click', function () {
-      var id = el.kfMenu._kfId;
+      var id = el.kfMenu._kfId, dot = el.kfMenu._dotId;
       hideKfMenu();
       if (id) copyKeyframe(id);
+      else if (dot) copyDot(dot);
     });
     el.kfMenuPaste.addEventListener('click', function () {
       var at = el.kfMenu._pasteAt, layer = el.kfMenu._pasteLayer;
       hideKfMenu();
-      pasteKeyframe(at, layer);
+      // Dot targets paste a dot when one is on the clipboard (keyframe paste
+      // stays reachable from them via the same item).
+      if (el.kfMenu._pasteDot && copiedDot) pasteDot(at, layer);
+      else pasteKeyframe(at, layer);
     });
     el.kfMenuDelete.addEventListener('click', function () {
-      var id = el.kfMenu._kfId;
+      var id = el.kfMenu._kfId, dot = el.kfMenu._dotId;
       hideKfMenu();
       if (id) deleteKeyframe(id);
+      else if (dot) {
+        deleteDot(dot);
+        renderSelectedPanel();
+        renderLane();
+        renderPreview();
+        invalidateDots();
+      }
     });
-    // Mobile-only Copy / Paste for the selected keyframe. On desktop the same
-    // actions live in the right-click context menu, which touch devices can't
-    // open, so these buttons (hidden on desktop) cover that gap.
+    // Mobile-only Copy / Paste for the selected keyframe or dot. On desktop
+    // the same actions live in the right-click context menu, which touch
+    // devices can't open, so these buttons (hidden on desktop) cover that gap.
     el.btnCopyKf.addEventListener('click', function () {
-      if (state.selectedId) copyKeyframe(state.selectedId);
+      if (state.selectedDotId) copyDot(state.selectedDotId);
+      else if (state.selectedId) copyKeyframe(state.selectedId);
     });
     el.btnPasteKf.addEventListener('click', function () {
-      pasteKeyframe(state.playhead);
+      if (state.selectedDotId && copiedDot) pasteDot(state.playhead);
+      else pasteKeyframe(state.playhead);
     });
     el.kfMenu.addEventListener('click', function (e) { e.stopPropagation(); });
     el.timeline.addEventListener('wheel', function (e) {
@@ -829,7 +846,6 @@
     });
     el.btnExportGo.addEventListener('click', runExport);
 
-    // Help button in the toolbar: open the documentation in a new tab.
     el.btnHelp.addEventListener('click', function () {
       window.open('docs.html', '_blank');
     });

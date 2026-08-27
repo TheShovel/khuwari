@@ -1548,7 +1548,7 @@ body.dragging-layer { cursor: grabbing; user-select: none; }
 .kf:hover { border-color: rgba(195, 171, 125, 0.5); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
 .kf.selected:hover { border-color: var(--accent); }
 
-/* ---- Camera track (timeline row + keyframe chips) ----
+/* Camera track (timeline row + keyframe chips)
    The camera row mirrors a layer row (gutter + content) but is NOT a
    .layer-row, so the layer-reorder index math in drag.js ignores it. */
 .camera-row {
@@ -1578,7 +1578,7 @@ body.dragging-layer { cursor: grabbing; user-select: none; }
 .cam-dot:hover { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
 
 
-/* ---- Reference audio lane (waveform under the timeline) ----
+/* Reference audio lane (waveform under the timeline)
    Spans the full timeline width (like .lane) and draws the waveform with the
    same GUTTER_W time offset as the lane, so clicks map to the right time. */
 #audioLane {
@@ -1630,7 +1630,7 @@ button:focus-visible {
 ::-webkit-scrollbar-thumb:hover { background: #454f5e; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* ---------- mobile ----------
+/* mobile
 
    Everything below only kicks in on narrow screens; desktop is untouched.
    The side panels become sliding drawers over the preview (the timeline stays
@@ -1778,7 +1778,7 @@ button:focus-visible {
   .bar-meta { font-size: 9.5px; }
 }
 
-/* ---- Built-in paint tool ----
+/* Built-in paint tool
    A Krita-style workspace: flat toolbar on top, tool-options docker on the
    left, the canvas in the centre, docker panels on the right and an action /
    onion-skin status bar at the bottom. Reuses the editor's design tokens. */

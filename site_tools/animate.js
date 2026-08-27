@@ -17,6 +17,8 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { assertChrome } = require('../tools/chrome');
+const CHROME = assertChrome();
 const { ART } = require('./shoot.js');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -34,7 +36,7 @@ const FRAME_DELAY = 100;       // ms per gif frame (~10 fps)
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(SCRATCH, { recursive: true });
 
-// ---------- CDP plumbing (same as shoot.js) ----------
+// CDP plumbing (same as shoot.js)
 class CDP {
   constructor(ws) {
     this.ws = ws; this.id = 0; this.pending = new Map();
@@ -88,7 +90,7 @@ async function captureFrame(file) {
   fs.writeFileSync(path.join(SCRATCH, file), Buffer.from(r.data, 'base64'));
 }
 
-// ---------- page-side animation helpers ----------
+// page-side animation helpers
 const PAGE = `
 window.__q = function (sel) { return document.querySelector(sel); };
 
@@ -132,7 +134,7 @@ window.__tween = function (pts, p) {
 
 window.__anims = {};
 
-// ---- ML inbetweens: drag a pose onto the timeline, the machine fills in ----
+// ML inbetweens: drag a pose onto the timeline, the machine fills in
 window.__anims.ml = {
   setup: function () {
     cancelRun(); closeMenus();
@@ -171,7 +173,7 @@ window.__anims.ml = {
   }
 };
 
-// ---- Paint: draw a stroke with the brush on the canvas ----
+// Paint: draw a stroke with the brush on the canvas
 window.__anims.paint = {
   setup: function () {
     cancelRun(); closeMenus();
@@ -201,7 +203,7 @@ window.__anims.paint = {
   }
 };
 
-// ---- Color fill: click to drop dots that flood the line art ----
+// Color fill: click to drop dots that flood the line art
 window.__anims.fill = {
   setup: function () {
     cancelRun(); closeMenus();
@@ -247,7 +249,7 @@ window.__anims.fill = {
   }
 };
 
-// ---- Camera: drag the fisheye slider and the frame bulges outward ----
+// Camera: drag the fisheye slider and the frame bulges outward
 window.__anims.camera = {
   setup: function () {
     cancelRun(); closeMenus();
@@ -274,8 +276,8 @@ window.__anims.camera = {
   }
 };
 
-// ---- Motion blur: play the motion, then flip the switch and play it again
-// with the smear on, so the blur is actually seen in motion ----------------
+// Motion blur: play the motion, then flip the switch and play it again
+// with the smear on, so the blur is actually seen in motion
 window.__anims.blur = {
   setup: function () {
     cancelRun(); closeMenus();
@@ -393,7 +395,7 @@ const TEARDOWN = { paint: 'closePaint();' };
 function pad(n) { return String(n).padStart(2, '0'); }
 
 async function main() {
-  const chrome = spawn('chromium', [
+  const chrome = spawn(CHROME, [
     '--headless=new', '--no-sandbox', '--disable-gpu',
     '--remote-debugging-port=' + PORT, '--remote-allow-origins=*',
     '--window-size=' + VIEW_W + ',' + VIEW_H, 'about:blank'

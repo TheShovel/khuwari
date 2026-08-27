@@ -4,6 +4,8 @@
 // tip pixels paint and WHITE stays transparent (a square + transparent splash
 // inside is the old, inverted bug).
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -33,6 +35,11 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
@@ -71,7 +78,7 @@ function maskStats(tipCv, samplePoints) {
 }
 
 async function main() {
-  // --- WaterC_Spread: tip = bristles_circle_dense.png (dark splash on white) ---
+  // WaterC_Spread: tip = bristles_circle_dense.png (dark splash on white)
   const spread = await parseKppBytes('j)_WaterC_Spread.kpp', await fetchU8('/brushes/j)_WaterC_Spread.kpp'));
   log('spread tip loaded: ' + (spread.tip ? spread.tip.width + 'x' + spread.tip.height : 'null'));
   const okSpreadTip = spread.tip && spread.tip.width > 0;
@@ -81,14 +88,14 @@ async function main() {
   // bristles_circle_dense: corners white (alpha->0), center dark (alpha->high)
   const okSpreadMask = s.corner < 40 && s.center > 150;
 
-  // --- Square-rough-tip brush (WaterC_Basic_Round-Grain) ---
+  // Square-rough-tip brush (WaterC_Basic_Round-Grain)
   const grain = await parseKppBytes('j)_WaterC_Basic_Round-Grain.kpp', await fetchU8('/brushes/j)_WaterC_Basic_Round-Grain.kpp'));
   log('grain tip loaded: ' + (grain.tip ? grain.tip.width + 'x' + grain.tip.height : 'null'));
   const gs = maskStats(grain.tip, { corner: [10, 10], center: [128, 128] });
   log('grain mask: corner=' + gs.corner + ' center=' + gs.center);
   const okGrainMask = gs.corner < 40 && gs.center > 40;
 
-  // --- GBR tip (bokey_circle.gbr) via a brush that references it ---
+  // GBR tip (bokey_circle.gbr) via a brush that references it
   // Directly parse the gbr and check stored-byte => mask orientation.
   const bokey = parseGbrBytes(await fetchU8('/brushes/tips/bokey_circle.gbr'));
   log('bokey gbr: ' + bokey.width + 'x' + bokey.height);
@@ -99,17 +106,17 @@ async function main() {
   log('bokey mask: corner=' + bk.corner + ' center=' + bk.center);
   const okGbr = bk.corner < 40 && bk.center > 40;
 
-  // --- shape-tip beats embedded pattern (Basic_Lines-Dry has a chalk_round_hard
+  // shape-tip beats embedded pattern (Basic_Lines-Dry has a chalk_round_hard
   // SHAPE tip AND an embedded 512x512 grain pattern; the shape must win so the
-  // dab is round chalk, not a square of pattern grain) ---
+  // dab is round chalk, not a square of pattern grain)
   const linesDry = await parseKppBytes('j)_WaterC_Basic_Lines-Dry.kpp', await fetchU8('/brushes/j)_WaterC_Basic_Lines-Dry.kpp'));
   log('basic-lines-dry tip: ' + (linesDry.tip ? linesDry.tip.width + 'x' + linesDry.tip.height : 'null'));
   // chalk_round_hard.png is 300x300; the embedded pattern would be 512x512
   const okShapeTip = linesDry.tip && linesDry.tip.width === 300;
 
-  // --- allGray tolerance: spike_blob.png is dark-on-white and must render
+  // allGray tolerance: spike_blob.png is dark-on-white and must render
   // INVERTED (white corner -> transparent, dark center -> opaque) even though
-  // bilinear scaling can round channels to slightly different values ---
+  // bilinear scaling can round channels to slightly different values
   const flat = await parseKppBytes('j)_WaterC_Flat_Big-Grain_Tilt.kpp', await fetchU8('/brushes/j)_WaterC_Flat_Big-Grain_Tilt.kpp'));
   log('flat-big-grain tip: ' + (flat.tip ? flat.tip.width + 'x' + flat.tip.height : 'null'));
   const fs2 = maskStats(flat.tip, { corner: [10, 10], center: [128, 128] });
@@ -148,7 +155,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  chromium = spawn('chromium', [
+  chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

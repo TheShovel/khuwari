@@ -123,7 +123,7 @@ body::before {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; text-decoration-thickness: 1.6px; text-underline-offset: 3px; text-decoration-color: rgba(74,111,165,0.45); }
 
-/* ---------- nav — like a strip of masking tape / paper header ---------- */
+/* nav — like a strip of masking tape / paper header */
 
 .nav {
   position: sticky;
@@ -183,7 +183,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1.6px; text-und
 }
 .nav-cta { margin-left: auto; }
 
-/* ---------- buttons — hand-drawn, slightly wobbly ---------- */
+/* buttons — hand-drawn, slightly wobbly */
 
 .btn {
   display: inline-flex;
@@ -243,7 +243,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1.6px; text-und
 }
 .hero-cta .btn:not(.primary):hover { transform: rotate(-0.4deg) translateY(-1px); }
 
-/* ---------- layout ---------- */
+/* layout */
 
 .wrap {
   width: min(1060px, 92vw);
@@ -282,7 +282,7 @@ section:first-of-type { padding-top: 40px; }
   transform: rotate(0.15deg);
 }
 
-/* ---------- hero ---------- */
+/* hero */
 
 .hero {
   position: relative;
@@ -385,7 +385,7 @@ section:first-of-type { padding-top: 40px; }
 }
 .hero-note svg { vertical-align: -2px; margin-right: 5px; color: var(--accent-2); }
 
-/* ---------- features — taped index cards ---------- */
+/* features — taped index cards */
 
 .feat-head {
   padding: 30px 0 10px;
@@ -541,7 +541,7 @@ section:first-of-type { padding-top: 40px; }
 .feat-row.feat-text-only .feat-text { grid-column: 1 / -1; max-width: 680px; margin: 0 auto; }
 .feat-row.feat-text-only .feat-text p { max-width: 560px; margin-left: auto; margin-right: auto; }
 
-/* ---------- steps — little doodle cards ---------- */
+/* steps — little doodle cards */
 
 .steps-wrap { padding-top: 28px; }
 .steps {
@@ -597,7 +597,7 @@ section:first-of-type { padding-top: 40px; }
 }
 .step p { margin: 0; color: #656b77; font-size: 14.5px; line-height: 1.55; }
 
-/* ---------- values — our stance on AI ---------- */
+/* values — our stance on AI */
 
 .values-wrap { padding-top: 30px; text-align: center; }
 .values-card {
@@ -636,7 +636,7 @@ section:first-of-type { padding-top: 40px; }
   .values-card img { width: 120px; }
 }
 
-/* ---------- privacy band — highlighter sticky note ---------- */
+/* privacy band — highlighter sticky note */
 
 .band {
   margin: 56px 0 8px;
@@ -655,7 +655,7 @@ section:first-of-type { padding-top: 40px; }
 .band h3 { margin: 0 0 4px; font-family: var(--heading); font-size: 20px; color: var(--ink); }
 .band p { margin: 0; color: #656b77; font-size: 14px; }
 
-/* ---------- docs page ---------- */
+/* docs page */
 
 .docs-head {
   padding: 36px 0 10px;
@@ -701,7 +701,7 @@ section:first-of-type { padding-top: 40px; }
 }
 #searchCount { display: block; margin-top: 8px; text-align: center; color: var(--muted); font-size: 14px; min-height: 18px; font-family: var(--hand); }
 
-/* ---------- docs subpages: structured article layout ---------- */
+/* docs subpages: structured article layout */
 
 .doc-layout {
   display: grid;
@@ -934,7 +934,7 @@ section:first-of-type { padding-top: 40px; }
 }
 #searchEmpty svg { width: 34px; height: 34px; color: var(--border-faint); margin-bottom: 10px; }
 
-/* ---------- docs hub: category grid — like scattered index cards ---------- */
+/* docs hub: category grid — like scattered index cards */
 
 .doc-grid {
   display: grid;
@@ -1013,7 +1013,7 @@ section:first-of-type { padding-top: 40px; }
 .search-hit-title { display: block; color: var(--ink); font-size: 16px; font-weight: 700; font-family: var(--heading); margin-bottom: 3px; }
 .search-hit-text { display: block; color: #656b77; font-size: 13.5px; line-height: 1.55; }
 
-/* ---------- docs subpages ---------- */
+/* docs subpages */
 
 .crumbs {
   display: flex;
@@ -1056,7 +1056,7 @@ section:first-of-type { padding-top: 40px; }
 .pn-dir { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); font-family: var(--hand); }
 .pn-empty { visibility: hidden; }
 
-/* ---------- credits page ---------- */
+/* credits page */
 
 .credits-head { padding: 44px 0 8px; text-align: center; }
 .credits-head h1 {
@@ -1117,7 +1117,7 @@ section:first-of-type { padding-top: 40px; }
 
 .credit-wide { grid-column: 1 / -1; transform: rotate(0.15deg) !important; }
 
-/* ---------- footer — torn paper edge ---------- */
+/* footer — torn paper edge */
 
 .footer {
   margin-top: 72px;
@@ -1151,7 +1151,7 @@ section:first-of-type { padding-top: 40px; }
 .footer-links a:hover { color: var(--ink); }
 .footer-license { width: 100%; color: var(--muted); font-size: 13px; margin: 14px 0 0; }
 
-/* ---------- entrance animations — a little wobble like flipping pages ---------- */
+/* entrance animations — a little wobble like flipping pages */
 
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(10px) rotate(-0.6deg); }
@@ -1176,7 +1176,7 @@ section:first-of-type { padding-top: 40px; }
   text-decoration-skip-ink: none;
 }
 
-/* ---------- responsive ---------- */
+/* responsive */
 
 @media (max-width: 860px) {
   body {

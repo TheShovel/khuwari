@@ -3,6 +3,8 @@
 // mapping as real input: clientX/clientY -> canvasPoint).
 // Usage: node tools/test-selection.js
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +22,7 @@ function cdpFetch(p) { return new Promise((res, rej) => { http.get({ host: '127.
 function cdp(ws, id, method, params) { return new Promise((res, rej) => { const h = ev => { const m = JSON.parse(ev.data); if (m.id === id) { ws.removeEventListener('message', h); m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result); } }; ws.addEventListener('message', h); ws.send(JSON.stringify({ id, method, params: params || {} })); }); }
 (async () => {
   await new Promise(r => server.listen(PORT, r));
-  const ch = spawn('chromium', ['--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--remote-debugging-port=' + CDP_PORT, 'about:blank'], { stdio: 'ignore' });
+  const ch = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--remote-debugging-port=' + CDP_PORT, 'about:blank'], { stdio: 'ignore' });
   let targets = null;
   for (let i = 0; i < 50; i++) { try { targets = JSON.parse(await cdpFetch('/json')); if (targets.length) break; } catch (e) {} await new Promise(r => setTimeout(r, 200)); }
   const pg = targets.find(t => t.type === 'page');
@@ -77,7 +79,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       function rectSel(x0,y0,x1,y1){ setPaintTool('select'); selMode='rect'; document.getElementById('paintSelMode').value='rect'; drag(x0,y0,x1,y1); }
       function freshSel(x0,y0,x1,y1){ selectNone(); rectSel(x0,y0,x1,y1); }
 
-      // ---------- 1. brush is masked to the selection ----------
+      // 1. brush is masked to the selection
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
@@ -89,7 +91,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var greenInSel = count(0,255,0,50,60,90,80), greenOutSel = count(0,255,0,101,60,170,80);
       pass('brush masked to selection', greenInSel > 100 && greenOutSel === 0, 'in=' + greenInSel + ' out=' + greenOutSel);
 
-      // ---------- 2. eraser stays inside the selection ----------
+      // 2. eraser stays inside the selection
       clear();
       lc().fillStyle = '#ffffff'; lc().fillRect(30, 30, 120, 120);
       freshSel(50, 50, 100, 100);
@@ -100,7 +102,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var stripIn = count(255,255,255,60,69,80,81), stripOut = count(255,255,255,101,69,150,81);
       pass('eraser masked to selection', stripIn < 80 && stripOut > 550, 'stripIn=' + stripIn + ' stripOut=' + stripOut);
 
-      // ---------- 3. line is masked to the selection ----------
+      // 3. line is masked to the selection
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
@@ -113,7 +115,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var lineInside = count(0,0,255,50,60,90,80), lineOutside = count(0,0,255,101,60,130,80);
       pass('line masked to selection', lineInside > 20 && lineOutside === 0, 'in=' + lineInside + ' out=' + lineOutside);
 
-      // ---------- 4. rect shape fill is masked to the selection ----------
+      // 4. rect shape fill is masked to the selection
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
@@ -128,7 +130,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var shIn = count(255,255,0,50,50,90,90), shOut = count(255,255,0,101,50,150,110);
       pass('shape masked to selection', shIn > 200 && shOut === 0, 'in=' + shIn + ' out=' + shOut);
 
-      // ---------- 4b. repeated strokes inside a lasso never fade existing content ----------
+      // 4b. repeated strokes inside a lasso never fade existing content
       // Regression: the old hard-selection commit erased the whole selection and
       // re-placed the masked scratch, so every stroke inside a lasso re-composited
       // the anti-aliased fringe at reduced alpha - the fringe (and the content
@@ -177,7 +179,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
         es3.maxA >= es1.maxA && es3.solid >= es1.solid && es1.solid >= es0.solid * 0.9,
         'solid=' + es0.solid + ',' + es1.solid + ',' + es2.solid + ',' + es3.solid + ' max=' + es1.maxA + '->' + es3.maxA);
 
-      // ---------- 4c. faint strokes inside a selection are never re-composited ----------
+      // 4c. faint strokes inside a selection are never re-composited
       // Regression: a commit that re-blits a scratch containing a copy of the
       // layer re-applies every semi-transparent pixel inside the selection, so
       // faint brushes (e.g. the sketch pencils) got darker with every stroke -
@@ -215,7 +217,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
         Math.abs(fa0 - fa1) < 3 && Math.abs(fa1 - fa2) < 3,
         'avg=' + fa0 + ' -> ' + fa1 + ' -> ' + fa2);
 
-      // ---------- 5. fill limited to selection (contiguous) ----------
+      // 5. fill limited to selection (contiguous)
       clear();
       lc().fillStyle = '#ffffff'; lc().fillRect(0, 0, workW, workH);
       sel = { type: 'rect', x: 40, y: 40, w: 60, h: 60, feather: 0 };
@@ -227,7 +229,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var fillIn = count(0,255,0,45,45,95,95), fillOut = count(0,255,0,0,0,40,workH);
       pass('fill contiguous respects selection', fillIn > 500 && fillOut === 0, 'in=' + fillIn + ' out=' + fillOut);
 
-      // ---------- 6. fill non-contiguous does NOT wipe outside the selection ----------
+      // 6. fill non-contiguous does NOT wipe outside the selection
       clear();
       lc().fillStyle = '#aaaaaa'; lc().fillRect(0, 0, workW, workH);
       lc().fillStyle = '#ffffff'; lc().fillRect(60, 60, 20, 20);
@@ -241,7 +243,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       pass('fill non-contig keeps outside', grayKept > 1000 && outsideWiped === 0, 'gray=' + grayKept + ' black=' + outsideWiped);
       pass('fill non-contig filled inside', count(0,255,0,55,55,85,85) > 300);
 
-      // ---------- 7. move tool moves ONLY the selected content ----------
+      // 7. move tool moves ONLY the selected content
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       lc().fillStyle = '#0000ff'; lc().fillRect(140, 140, 20, 20);
@@ -252,7 +254,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       pass('move tool moved selection content', redMoved > 400, 'red@new=' + redMoved);
       pass('move tool left layer outside selection', blueAtOld > 200, 'blue@old=' + blueAtOld);
 
-      // ---------- 8. wand selects a contiguous region ----------
+      // 8. wand selects a contiguous region
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       lc().fillStyle = '#0000ff'; lc().fillRect(120, 120, 10, 10);
@@ -266,7 +268,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       pass('wand mask excludes blue', selPoint(125, 125) === false);
       pass('wand outline drawn', darkOutline(45, 45, 100, 100) > 100, 'dark=' + darkOutline(45, 45, 100, 100));
 
-      // ---------- 8b. wand selects art that is NOT on the active layer ----------
+      // 8b. wand selects art that is NOT on the active layer
       clear();
       lc().fillStyle = '#0000ff'; lc().fillRect(120, 120, 10, 10);
       var low2 = addLayer('low2', false);
@@ -278,11 +280,11 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       click(60, 60);   // art lives on low2, NOT the active layer
       pass('wand selects from the composite', !!sel && sel.type === 'mask' && selPoint(60, 60) === true && selPoint(125, 125) === false && selPoint(140, 140) === false, 'bounds=' + (selBounds() ? selBounds().x + ',' + selBounds().y : 'none'));
 
-      // ---------- 8c. wand click on empty transparent space selects the background ----------
+      // 8c. wand click on empty transparent space selects the background
       click(300, 300);
       pass('wand transparent click selects background only', !!sel && selPoint(300, 300) === true && selPoint(60, 60) === false, 'sel60=' + selPoint(60, 60));
 
-      // ---------- 9. inverted selection survives rebuilds + draws real outline ----------
+      // 9. inverted selection survives rebuilds + draws real outline
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
@@ -295,15 +297,15 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var invOutline = darkOutline(0, 0, workW, workH);
       pass('invert has outline', invOutline > 200, 'dark=' + invOutline);
 
-      // ---------- 10. clicking empty space with the select tool deselects ----------
+      // 10. clicking empty space with the select tool deselects
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
       click(150, 150);   // click empty space, no drag
       pass('clicking empty space deselects', !sel, 'sel=' + (sel ? 'still-selected' : 'cleared'));
 
-      // ---------- 10b. the mode dropdown drives the shape (real change event),
-      // including from the LASSO tool button ----------
+      // 10b. the mode dropdown drives the shape (real change event),
+      // including from the LASSO tool button
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);   // a rect selection exists
@@ -319,7 +321,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       drag(60, 130, 160, 180);
       pass('lasso tool follows the dropdown to rect', !!sel && sel.type === 'rect', 'type=' + (sel && sel.type));
 
-      // ---------- 11. feathered selection still masks the brush ----------
+      // 11. feathered selection still masks the brush
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       freshSel(40, 40, 100, 100);
@@ -332,7 +334,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       var fIn = count(0,255,0,50,60,90,80), fOutHard = count(0,255,0,120,60,170,80);
       pass('feathered brush stays inside', fIn > 100 && fOutHard === 0, 'in=' + fIn + ' out=' + fOutHard);
 
-      // ---------- 12. mask-type selection moves (wand result) ----------
+      // 12. mask-type selection moves (wand result)
       clear();
       lc().fillStyle = '#ff0000'; lc().fillRect(50, 50, 40, 40);
       setPaintTool('wand');
@@ -342,7 +344,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       pass('mask selection moved', count(255,0,0,75,75,135,135) > 300, 'red@new=' + count(255,0,0,75,75,135,135));
       pass('mask selection moved outline', darkOutline(75, 75, 135, 135) > 40, 'dark=' + darkOutline(75, 75, 135, 135));
 
-      // ---------- 13. color history: ONLY colors actually used on the canvas ----------
+      // 13. color history: ONLY colors actually used on the canvas
       state.colorHistory = [];
       renderRecentColors();
       setPaintColor('#101010');   // picked, but never painted
@@ -379,7 +381,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       applyProjectData(saved);
       pass('project load restores colorHistory', Array.isArray(state.colorHistory) && state.colorHistory[0] === '#abcdef', 'first=' + state.colorHistory[0]);
 
-      // ---------- 14. textured hard brushes: light pen pressure still paints ----------
+      // 14. textured hard brushes: light pen pressure still paints
       // The WaterC set's Opacity option is a 0->1 pressure ramp, so a light
       // tablet press used to multiply toward zero opacity and lay nothing down.
       // A faint floor (kpp.opacityGate/opacityFloor from parseKppBytes) keeps a
@@ -406,7 +408,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
         pass('bundled WaterC brush loaded with a pressure gate', false, 'found=' + (!!wc) + ' gate=' + (wc && wc.kpp && wc.kpp.opacityGate));
       }
 
-      // ---------- 15. the paint editor's Back button confirms before losing work ----------
+      // 15. the paint editor's Back button confirms before losing work
       clear();
       var leaveDlg = document.getElementById('paintLeaveDialog');
       pass('leave dialog exists', !!leaveDlg);
@@ -429,7 +431,7 @@ function cdp(ws, id, method, params) { return new Promise((res, rej) => { const 
       document.getElementById('btnPaintLeaveYes').click();
       pass('leave anyway closes the paint editor', paintOpen === false, 'paintOpen=' + paintOpen);
 
-      // ---------- 16. leaving the page with unsaved work asks for confirmation ----------
+      // 16. leaving the page with unsaved work asks for confirmation
       var leavePrompt = function () { var e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; };
       captureSavedBaseline();
       pass('clean project does not prompt on leave', leavePrompt() === false);

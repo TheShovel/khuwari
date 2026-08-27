@@ -13,7 +13,7 @@
 
   function gapId(fromId, toId) { return fromId + '->' + toId; }
 
-  // ---- generative color fill (color-dot layers) ----
+  // generative color fill (color-dot layers)
   // A "fill" layer holds user-placed dots instead of keyframes. Each dot
   // carries a color, a threshold (how opaque a pixel must be to act as a line
   // barrier), a grow radius (px, tucks the color under anti-aliased edges) and
@@ -82,6 +82,68 @@
     recordUndo();
     L.dots = L.dots.filter(function (d) { return d.id !== id; });
     if (state.selectedDotId === id) state.selectedDotId = null;
+  }
+
+  // Right-click copy/paste for dots, mirroring keyframes: copy remembers the
+  // dot's position, fill settings and window length; paste drops a fresh dot
+  // with the same look at the playhead on the copied dot's layer. The
+  // clipboard survives pastes, so one dot can be spread across the timeline.
+  function copyDot(id) {
+    var L = layerOfDot(id);
+    var d = dotById(id);
+    if (!L || !d) return;
+    copiedDot = {
+      x: d.x, y: d.y,
+      color: d.color !== undefined ? d.color : '#4f8fff',
+      threshold: d.threshold != null ? d.threshold : 0.5,
+      grow: d.grow != null ? d.grow : 1,
+      gradOn: !!d.gradOn,
+      gradColor: d.gradColor || '#ffffff',
+      gradHeight: d.gradHeight != null ? d.gradHeight : 24,
+      gradDir: d.gradDir || 'bottom',
+      dur: Math.max(0.05, (d.end - d.start) || 1),
+      layer: L.id
+    };
+    toast('Dot copied');
+  }
+
+  function pasteDot(atTime, layerId) {
+    if (!copiedDot) return null;
+    var L = layerById(layerId || copiedDot.layer);
+    if (!L || L.type !== 'fill') {
+      // The copied dot's layer is gone, or the target isn't a fill layer:
+      // fall back to the first fill layer so a paste never silently drops.
+      L = state.layers.find(function (l) { return l.type === 'fill'; }) || null;
+    }
+    if (!L) return null;
+    recordUndo();
+    if (!L.dots) L.dots = [];
+    var start = Math.max(0, atTime === undefined ? state.playhead : atTime);
+    var end = start + copiedDot.dur;
+    var d = {
+      id: 'D' + (++idSeq),
+      x: copiedDot.x, y: copiedDot.y,
+      color: copiedDot.color,
+      threshold: copiedDot.threshold,
+      grow: copiedDot.grow,
+      gradOn: copiedDot.gradOn,
+      gradColor: copiedDot.gradColor,
+      gradHeight: copiedDot.gradHeight,
+      gradDir: copiedDot.gradDir,
+      start: start,
+      end: Math.max(end, start + 0.05)
+    };
+    L.dots.push(d);
+    state.selectedDotId = d.id;
+    // The pasted color becomes the default for new dots, like the dot
+    // properties paste.
+    lastDotColor = d.color;
+    try { localStorage.setItem(DOT_COLOR_KEY, lastDotColor); } catch (e) {}
+    renderLane();
+    renderSelectedPanel();
+    renderPreview();
+    invalidateDots();
+    return d;
   }
 
   // Dots of a fill layer that are active at time t (inclusive window).

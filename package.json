@@ -1,0 +1,13 @@
+{
+  "name": "khuwari",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Khuwari: browser-based animation tool with ML inbetweens (theshovel.rocks/khuwari). Static site, no build step - the editor is plain scripts loaded by editor.html.",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "test:site": "node site_tools/test-site.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

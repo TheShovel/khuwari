@@ -44,7 +44,6 @@
   function ghostFrame() {
     var g = assetDrag.ghost, s = assetDrag.spring;
     if (!g || !s) { assetDrag.anim = 0; return; }
-    // Position spring toward the cursor.
     s.x += (s.tx - s.x) * 0.32;
     s.y += (s.ty - s.y) * 0.32;
     // Smoothed velocity from the cursor's movement.
@@ -130,7 +129,7 @@
     document.addEventListener('pointercancel', onUp);
   }
 
-  // ---- layer reordering ----
+  // layer reordering
   // Drag a layer's name gutter up/down to move it in the stack. The row under
   // the cursor determines the target index; the lane re-renders live so the
   // dragged layer visibly jumps to its new position. Composite order (top →

@@ -166,7 +166,6 @@
       nameSpan.className = 'layer-name';
       nameSpan.textContent = L.name;
       nameSpan.title = 'Double-click to rename';
-      // Double-click the name to edit it inline.
       nameSpan.addEventListener('dblclick', function (e) {
         e.stopPropagation();
         var input = document.createElement('input');
@@ -209,9 +208,6 @@
 
       if (L.type === 'fill') {
         // Fill layers hold color dots (seed points) instead of keyframes.
-        // Each dot is a chip spanning its active window [start, end]. Chips
-        // that overlap in time are stacked onto separate rows so dots placed
-        // at the same moment stay findable.
         var dots = L.dots || [];
         var fillItems = [];
         if (!dots.length) {
@@ -392,7 +388,6 @@
     div.className = 'thumb' + (f.key ? ' key' : '') + (i === state.curIndex ? ' current' : '');
     var img = document.createElement('img');
     div.appendChild(img);
-    // The thumb is the composite of every layer at this frame's time (cached).
     thumbURL(f.time).then(function (url) {
       if (div.parentNode) img.src = url;
     }).catch(function () {});

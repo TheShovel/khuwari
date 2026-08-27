@@ -1,5 +1,6 @@
 .scratch/domtest/
 .scratch/
+/node_modules/
 .commandcode/taste/
 mascot.kra~
 mascot.png~

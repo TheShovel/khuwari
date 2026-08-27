@@ -1,14 +1,9 @@
-/* worker.js: background frame interpolation for Keyframe Studio.
- *
- * Runs off the main thread so generating inbetweens never freezes the UI:
- * the ML model (RIFE via ONNX Runtime Web) is downloaded+compiled here, and
- * every gap is rendered in this worker. The main thread sends two keyframe
- * RGBA buffers + a list of missing frame indices; we reply with each finished
- * frame's RGBA buffer (transferred, zero-copy) plus progress messages.
- *
+/* worker.js: background frame interpolation for Keyframe Studio, off the main
+ * thread so generating inbetweens never freezes the UI. The main thread sends
+ * two keyframe RGBA buffers + missing frame indices; we reply with each
+ * finished frame's RGBA buffer (transferred, zero-copy) plus progress.
  * Falls back to the pure mesh morph per-frame if the model isn't ready or a
- * single inference fails, so generation never stalls.
- */
+ * single inference fails, so generation never stalls. */
 'use strict';
 
 importScripts('morph.js', 'model.js');
@@ -208,10 +203,6 @@ function generateGap(msg) {
     return flowPromise;
   };
 
-  // Transparency for a rendered frame: mesh-union alpha of the ORIGINAL
-  // keyframes, plus (for matte gaps) stripping the key tint from the RGB.
-  // Defined inside emit (needs t).
-
   // Make sure the ML model is loaded before generating, so a worker that gets
   // a gap before its model finished downloading still ML-generates instead of
   // silently falling back to the mesh warp for the whole gap.
@@ -237,9 +228,6 @@ function generateGap(msg) {
     if (cancelled) return Promise.resolve();
     var t = m.t;
     var time = fromTime + (toTime - fromTime) * t;
-    // Encode the frame to a PNG data URL in the worker when possible
-    // (OffscreenCanvas) so the main thread never runs the slow canvas.toDataURL
-    // per frame. Falls back to shipping the raw RGBA buffer otherwise.
     var send = function (rgba, ai) {
       return queuePost(jobId, { idx: m.idx, t: t, time: time, ai: ai }, rgba, width, height);
     };

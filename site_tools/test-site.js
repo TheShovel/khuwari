@@ -5,11 +5,19 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+// jsdom is a devDependency (see package.json at the repo root); run `npm
+// install` to fetch it. A fallback to the old .scratch sandbox keeps the test
+// runnable on machines with that setup already in place.
 let JSDOM;
 try {
   ({ JSDOM } = require('jsdom'));
 } catch (e) {
-  ({ JSDOM } = require(path.resolve(__dirname, '..', '.scratch', 'domtest', 'node_modules', 'jsdom')));
+  try {
+    ({ JSDOM } = require(path.resolve(__dirname, '..', '.scratch', 'domtest', 'node_modules', 'jsdom')));
+  } catch (e2) {
+    console.error('jsdom is missing. Run `npm install` at the repo root (see tools/ + site_tools/ tests).');
+    process.exit(1);
+  }
 }
 const SITE = path.resolve(__dirname, '..');
 
@@ -42,7 +50,7 @@ function bootJS(dom, extraFiles) {
 }
 
 (async () => {
-  // ---- home ----
+  // home
   {
     const dom = loadPage('index.html');
     const { document } = dom.window;
@@ -87,7 +95,7 @@ function bootJS(dom, extraFiles) {
     t('H11 editor start screen keeps its gradient', editorCss.indexOf('.start-art::after') !== -1);
   }
 
-  // ---- docs hub ----
+  // docs hub
   {
     const dom = loadPage('docs.html');
     const { document } = dom.window;
@@ -132,7 +140,7 @@ function bootJS(dom, extraFiles) {
     t('D10 clearing search restores the grid', !win.document.getElementById('catGrid').classList.contains('hidden'));
   }
 
-  // ---- docs subpages ----
+  // docs subpages
   {
     const slugs = ['getting-started', 'interface', 'keyframes', 'gaps', 'color-layers', 'onion-skinning', 'paint', 'blend-modes', 'camera', 'audio', 'undo-redo', 'export', 'settings', 'shortcuts', 'privacy'];
     const dir = path.join(SITE, 'docs');
@@ -213,7 +221,7 @@ function bootJS(dom, extraFiles) {
     t('P8 every subpage entry id is in the index', allIndexed);
   }
 
-  // ---- credits ----
+  // credits
   {
     const dom = loadPage('credits.html');
     const { document } = dom.window;

@@ -4,6 +4,8 @@
 // calls the real parse functions with the bundled brush files, simulates
 // strokes, and reports dab-density + parsed values.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -32,6 +34,11 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
@@ -109,7 +116,7 @@ async function main() {
   log('basic5 step = ' + bstep.toFixed(3) + ' (expect ~5.06 = 0.8*sqrt(40))');
   const okBasicStep = Math.abs(bstep - 5.06) < 0.1;
 
-  // --- rendered-stroke sanity: pencil must keep its grainy texture ---
+  // rendered-stroke sanity: pencil must keep its grainy texture
   // opaque_linearize caps per-dab alpha; a dense pencil line should average
   // well below 100% alpha. The sketchy grain comes from radius_by_random
   // (per-dab radius noise) AND the translucent opacity at each overlap. We
@@ -150,7 +157,7 @@ async function main() {
   // the inked pixels real alpha spread.
   const okTexturedMouse = half.maxA < 250 && half.std > 6 && half.n > 500;
 
-  // --- gaussian is bounded (libmypaint rand_gauss = Irwin-Hall, |x| <= 3.464) ---
+  // gaussian is bounded (libmypaint rand_gauss = Irwin-Hall, |x| <= 3.464)
   let gMax = 0, gSum = 0, gN = 100000;
   for (let gi = 0; gi < gN; gi++) { const v = Math.abs(gauss()); if (v > gMax) gMax = v; gSum += v; }
   log('gauss max |x| = ' + gMax.toFixed(3) + ' (expect <= 3.464, was unbounded before)');
@@ -161,7 +168,7 @@ async function main() {
   log('pencil max noisy radius = ' + pencilMaxR.toFixed(1) + 'px (was ~290px with Box-Muller tails)');
   const okRadiusBound = pencilMaxR < 50;
 
-  // --- mypaintGrain alpha correction: bigger dabs get less opacity ---
+  // mypaintGrain alpha correction: bigger dabs get less opacity
   current = pencil;
   const g0 = mypaintGrain(0, 0, pencil.radius, 1);
   let gBig = 0, gSmall = 0;
@@ -173,7 +180,7 @@ async function main() {
   log('avg opacity big dabs = ' + (gBig / 2000).toFixed(3) + ' (expect < 1, alpha-corrected)');
   const okCorrection = (gBig / 2000) < 0.9;
 
-  // --- size display is diameter (2x radius) ---
+  // size display is diameter (2x radius)
   current = basic; // radius 20 -> 40px diameter
   const sizeLabel = fmtSize(current.radius * 2);
   log('basic5 size label = ' + sizeLabel + ' (expect ~40px, Krita shows diameter)');
@@ -209,7 +216,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  chromium = spawn('chromium', [
+  chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

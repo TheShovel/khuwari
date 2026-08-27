@@ -69,6 +69,7 @@
   var lastDotColor = '#4f8fff';
   var copiedDotProps = null; // fill properties copied from a dot, ready to paste onto another
   var copiedKeyframe = null; // { img, name, w, h, hold, mix, layer }: a copied keyframe, ready to paste
+  var copiedDot = null;      // { x, y, fill settings, dur, layer }: a copied color dot, ready to paste
   var toastTimer = null;
   var WARN_GEN_COUNT = 5; // gaps needing more inbetweens than this get a red warning
   var REGEN_ABSORB_MS = 400; // while a run is active, edits wait at least this long so a quick burst coalesces into ONE restart instead of one cancel+restart per edit

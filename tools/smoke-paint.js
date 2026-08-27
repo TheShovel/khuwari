@@ -2,6 +2,8 @@
 // Quick smoke test: load the full editor, open the paint tool, and report any
 // console errors (especially in the paint code). Skips waiting for the ML model.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -50,7 +52,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  const chromium = spawn('chromium', [
+  const chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

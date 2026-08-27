@@ -123,7 +123,6 @@
 
   function audioEnabled() { return !!(state.audio && state.audio.src); }
 
-  // Ensure the live <audio> element is pointing at the loaded source.
   function syncAudioEl() {
     if (!audioEnabled()) return;
     if (!audioEl) ensureAudioEl();
@@ -169,8 +168,6 @@
     if (wrap) wrap.classList.toggle('has-audio', audioEnabled());
     if (nameEl) nameEl.textContent = audioEnabled() ? (state.audio.name || 'audio') : 'No audio loaded';
     if (muteEl) { muteEl.checked = !!(state.audio && state.audio.muted); muteEl.disabled = !audioEnabled(); }
-    // Load / Remove are mutually exclusive, like the camera Add/Remove keys:
-    // Load shows when there is no sound, Remove shows when one is loaded.
     if (loadEl) loadEl.classList.toggle('hidden', audioEnabled());
     if (removeEl) removeEl.classList.toggle('hidden', !audioEnabled());
   }

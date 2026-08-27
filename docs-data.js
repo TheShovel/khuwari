@@ -1,7 +1,7 @@
 /* Search index for the Khuwari docs. The hub (docs.html) searches across every
  * category page through this list; each topic links to its subpage. */
 window.KHUWARI_DOCS = [
-  // ---- getting started ----
+  // getting started
   { cat: 'Getting started', slug: 'getting-started', id: 'what-is', title: 'What is Khuwari?',
     text: 'Khuwari is a browser based animation tool that fills in the frames between your keyframes using machine learning. You draw or import the important poses, place them on the timeline, and Khuwari generates everything in between. It runs entirely in your browser. The machine learning model is downloaded once, and your art never leaves your machine.',
     url: 'docs/getting-started.html' },
@@ -12,7 +12,7 @@ window.KHUWARI_DOCS = [
     text: 'Projects save as .khuwari files that are easy to version and share. They hold your layers, keyframes, gaps and settings. Use File in the toolbar, then Save project (.khuwari) to download one, and Load project to bring one back.',
     url: 'docs/getting-started.html' },
 
-  // ---- interface ----
+  // interface
   { cat: 'The interface', slug: 'interface', id: 'assets-panel', title: 'Assets panel',
     text: 'Your image library, on the left. Use Add images to bring in art, then drag images onto the timeline to make keyframes. You can delete images from the panel when you no longer need them.',
     url: 'docs/interface.html' },
@@ -29,7 +29,7 @@ window.KHUWARI_DOCS = [
     text: 'The Layer button in the toolbar opens the layer menu. From there you can add a normal layer, add a color layer, rename, hide or remove the active layer. Layers draw from top to bottom, and each one keeps its own keyframes and gaps. Drag layers up and down in the menu to reorder them.',
     url: 'docs/interface.html' },
 
-  // ---- keyframes ----
+  // keyframes
   { cat: 'Keyframes', slug: 'keyframes', id: 'add-keyframe', title: 'Add a keyframe',
     text: 'Drag an image from the assets panel onto a layer track at the time you want it. The image becomes a keyframe chip that holds that pose.',
     url: 'docs/keyframes.html' },
@@ -46,7 +46,7 @@ window.KHUWARI_DOCS = [
     text: 'Select a keyframe and use Replace image to swap in different art, or Delete to remove it. The keyboard shortcut Delete or Backspace also works.',
     url: 'docs/keyframes.html' },
 
-  // ---- gaps & inbetweens ----
+  // gaps & inbetweens
   { cat: 'Gaps & inbetweens', slug: 'gaps', id: 'what-is-gap', title: 'What is a gap?',
     text: 'The space between two keyframes on the same layer. Click the gap chip on the timeline to open its options in the right panel. The inbetweens are generated there.',
     url: 'docs/gaps.html' },
@@ -66,7 +66,7 @@ window.KHUWARI_DOCS = [
     text: 'Inbetweens regenerate automatically whenever your keyframes change. To force a full refresh, use the regenerate button above the timeline, to the right of the play buttons.',
     url: 'docs/gaps.html' },
 
-  // ---- color layers ----
+  // color layers
   { cat: 'Color layers', slug: 'color-layers', id: 'what-they-do', title: 'What they do',
     text: 'A color layer holds dots instead of keyframes. Each dot acts like a smart bucket fill for the layer above it, so you can color in line art without touching the drawing.',
     url: 'docs/color-layers.html' },
@@ -83,7 +83,7 @@ window.KHUWARI_DOCS = [
     text: 'Dots only work during the time you set. Use the start and end fields in the right panel, or drag the dot chip on the timeline and drag its edges to resize. Outside that window the dot does nothing.',
     url: 'docs/color-layers.html' },
 
-  // ---- onion skinning ----
+  // onion skinning
   { cat: 'Onion skinning', slug: 'onion-skinning', id: 'what-it-is', title: 'What it is',
     text: 'Onion skinning shows the frames around the current one, so you can see where the motion is heading while you work. It is a toggle, like the view only keyframes button.',
     url: 'docs/onion-skinning.html' },
@@ -97,12 +97,12 @@ window.KHUWARI_DOCS = [
     text: 'Your onion skin settings are saved in the browser, so they come back the next time you open Khuwari, even after loading a project.',
     url: 'docs/onion-skinning.html' },
 
-  // ---- blend modes ----
+  // blend modes
   { cat: 'Blend modes', slug: 'blend-modes', id: 'per-keyframe', title: 'Per keyframe blending',
     text: 'Each keyframe can use any of 16 blend modes, from multiply and screen to color and luminosity. Set it in the selection panel with a keyframe selected.',
     url: 'docs/blend-modes.html' },
 
-  // ---- export ----
+  // export
   { cat: 'Export', slug: 'export', id: 'formats', title: 'Formats',
     text: 'The Export button in the toolbar offers a PNG sequence in a zip, an animated GIF, video in five containers (MP4, WebM, MKV, MOV and MPEG-TS) and the current frame as a single PNG.',
     url: 'docs/export.html' },
@@ -110,7 +110,7 @@ window.KHUWARI_DOCS = [
     text: 'Pick the export resolution from the export menu. Exports run in the background with a progress bar, and you can stop them if you change your mind.',
     url: 'docs/export.html' },
 
-  // ---- settings ----
+  // settings
   { cat: 'Settings', slug: 'settings', id: 'fps', title: 'FPS',
     text: 'How many frames per second the timeline plays. Lower values are punchier and cheaper to generate, higher values are smoother.',
     url: 'docs/settings.html' },
@@ -124,7 +124,7 @@ window.KHUWARI_DOCS = [
     text: 'The long edge of the working canvas, from 512 pixels down to 320. Smaller is noticeably faster to generate, and exports still render at full resolution.',
     url: 'docs/settings.html' },
 
-  // ---- keyboard shortcuts ----
+  // keyboard shortcuts
   { cat: 'Keyboard shortcuts', slug: 'shortcuts', id: 'playback', title: 'Playback',
     text: 'Space plays or pauses the animation. Left and Right arrows step one frame back or forward.',
     url: 'docs/shortcuts.html' },
@@ -132,7 +132,7 @@ window.KHUWARI_DOCS = [
     text: 'Delete or Backspace deletes the selected keyframe. Shortcuts are ignored while you are typing in a field.',
     url: 'docs/shortcuts.html' },
 
-  // ---- paint ----
+  // paint
   { cat: 'Paint', slug: 'paint', id: 'what-it-is', title: 'What it is',
     text: 'The paint tool is a full Krita-style drawing workspace built into Khuwari. Sketch, ink and color right inside the editor on layers, with brushes, selection, transform, fill, shapes and more, then drop the result into your animation. Paint-made images stay editable - their layers are saved with the project.',
     url: 'docs/paint.html' },
@@ -161,7 +161,7 @@ window.KHUWARI_DOCS = [
     text: 'Save to library adds the drawing to the assets panel, where it drags onto the timeline like any image. Repainting a keyframe updates it in place and regenerates the gaps around it; brand-new drawings are named the first time you add them.',
     url: 'docs/paint.html' },
 
-  // ---- camera ----
+  // camera
   { cat: 'Camera', slug: 'camera', id: 'what-it-is', title: 'What it is',
     text: 'The camera applies a pan, zoom and rotation to the whole frame on top of your layers, plus lens and film effects: fisheye, film grain, chromatic aberration, vignette and handheld shake. It is non-destructive and applied to the preview and to exports alike. While a Color layer is selected the camera steps aside and the panel locks, so dots land exactly where you click.',
     url: 'docs/camera.html' },
@@ -181,7 +181,7 @@ window.KHUWARI_DOCS = [
     text: 'The camera is part of the final composite, so every exported frame includes it, lens effects and all. Use it with squash, motion blur and color layers like the rest of the frame.',
     url: 'docs/camera.html' },
 
-  // ---- audio ----
+  // audio
   { cat: 'Audio', slug: 'audio', id: 'what-it-is', title: 'What it is',
     text: 'The audio track is a scratch reference track for timing. Load a sound file and it plays in sync with the timeline so you can animate to the beat or to dialogue. It is not part of the export.',
     url: 'docs/audio.html' },
@@ -195,7 +195,7 @@ window.KHUWARI_DOCS = [
     text: 'The audio file is stored inside the .khuwari project, so it comes back when you reopen the file. Everything is stored locally on your machine.',
     url: 'docs/audio.html' },
 
-  // ---- undo & redo ----
+  // undo & redo
   { cat: 'Undo & redo', slug: 'undo-redo', id: 'undo-redo', title: 'Undo and redo',
     text: 'The transport at the bottom of the timeline has Undo and Redo buttons. Edits to keyframes, gaps, layers, dots, camera and audio all land on the history stack.',
     url: 'docs/undo-redo.html' },
@@ -209,7 +209,7 @@ window.KHUWARI_DOCS = [
     text: 'Dragging a slider records one undo step for the whole gesture, not one per frame, so a single undo reverts the entire drag instead of just the last tick.',
     url: 'docs/undo-redo.html' },
 
-  // ---- privacy ----
+  // privacy
   { cat: 'Privacy', slug: 'privacy', id: 'nothing-leaves', title: 'Nothing leaves your browser',
     text: 'Khuwari is a local tool. The machine learning model downloads once and then runs in your browser, and your images, projects and exports never leave your machine. There are no accounts and no tracking.',
     url: 'docs/privacy.html' }

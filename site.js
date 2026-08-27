@@ -221,7 +221,6 @@
     }
 
     if (!q) {
-      // Nothing typed: show the category grid, hide the results.
       results.classList.add('hidden');
       if (grid) grid.classList.remove('hidden');
       if (empty) empty.classList.add('hidden');

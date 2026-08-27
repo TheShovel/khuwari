@@ -98,7 +98,7 @@
     var W = workW, H = workH;
     var t = state.playhead;
     L.dots.forEach(function (d) {
-      if (d.start > t + 1e-9 || t > d.end + 1e-9) return; // not active at this time
+      if (d.start > t + 1e-9 || t > d.end + 1e-9) return;
       var px = d.x * W, py = d.y * H;
       // When the camera is active, transform the marker position to match the
       // camera-transformed composite so the rings sit on top of the dots.

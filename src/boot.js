@@ -109,7 +109,7 @@
     el.btnOnion.classList.toggle('active', state.onion);
     initWorker();
     loadModelWithOverlay(); // download + compile the ML model on launch
-    scheduleGenerate(400);  // auto-fill any dirty gaps shortly after launch
+    scheduleGenerate(400);
     window.addEventListener('resize', function () {
       // If the window shrinks, keep the timeline inside the clamped range so
       // the preview never gets crushed to nothing.

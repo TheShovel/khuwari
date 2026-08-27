@@ -2,6 +2,8 @@
 // Headless verification of the paint tool system: selection, crop, resize,
 // fill, move, eyedrop, shapes, flip/rotate, transform.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -30,6 +32,11 @@ const server = http.createServer((req, res) => {
 
 const TOOLS_PAGE = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 window.toast = function () {};
@@ -67,7 +74,7 @@ async function main() {
   lc.fillRect(20, 20, 40, 40);
   compositeDisplay();
 
-  // ---- eraser state: selecting an eraser brush then a normal brush ----
+  // eraser state: selecting an eraser brush then a normal brush
   current = makeBrush('Eraser test', { radius: 4, opacity: 1, spacing: 0.1, eraser: true, builtin: true });
   eraserOn = false;
   refreshTip();
@@ -101,7 +108,7 @@ async function main() {
   lc.fillRect(20, 20, 40, 40);
   compositeDisplay();
 
-  // ---- selection ----
+  // selection
   sel = { type: 'rect', x: 10, y: 10, w: 50, h: 50, feather: 0 };
   buildSelMask();
   pass('sel mask center', selPoint(35, 35) === true);
@@ -124,7 +131,7 @@ async function main() {
   deleteSelection();
   pass('delete sel cleared', countPixels(layerCtx(), 10, 10, 50, 50) === 0);
 
-  // ---- fill ----
+  // fill
   current = makeBrush('Test', { radius: 4, opacity: 1, spacing: 0.1, color: '#00ff00' });
   layerCtx().clearRect(0, 0, workW, workH);
   layerCtx().fillStyle = '#fff';
@@ -133,21 +140,21 @@ async function main() {
   let d2 = layerCtx().getImageData(60, 60, 8, 8).data;
   pass('fill changed color', d2[1] > 200, 'g=' + d2[1]);
 
-  // ---- eyedrop ----
+  // eyedrop
   layerCtx().fillStyle = '#123456';
   layerCtx().fillRect(100, 100, 4, 4);
   compositeDisplay();
   eyedropDown({ x: 101, y: 101 });
   pass('eyedrop picks color', current.color === '#123456', 'got ' + current.color);
 
-  // ---- line tool ----
+  // line tool
   layerCtx().clearRect(0, 0, workW, workH);
   lineDown({ x: 10, y: 10 });
   lineMove({ x: 100, y: 100 });
   lineUp();
   pass('line drew pixels', countPixels(layerCtx(), 0, 0, workW, workH) > 50);
 
-  // ---- rect shape ----
+  // rect shape
   layerCtx().clearRect(0, 0, workW, workH);
   paintTool = 'rect';
   toolDrag = null;
@@ -156,7 +163,7 @@ async function main() {
   shapeUp();
   pass('rect outline drew', countPixels(layerCtx(), 0, 0, workW, workH) > 40);
 
-  // ---- flip ----
+  // flip
   layerCtx().clearRect(0, 0, workW, workH);
   layerCtx().fillStyle = '#f00';
   layerCtx().fillRect(10, 10, 20, 20);
@@ -165,7 +172,7 @@ async function main() {
   let rightRed = d3[((workH * 10 + (workW - 30)) * 4)];
   pass('flip H moved pixels', rightRed > 200);
 
-  // ---- rotate 90 CW ----
+  // rotate 90 CW
   layerCtx().clearRect(0, 0, workW, workH);
   layerCtx().fillStyle = '#f00';
   layerCtx().fillRect(10, 50, 10, 10);
@@ -175,12 +182,12 @@ async function main() {
   let rotPx = d4[((10 * workW + 68) * 4)];
   pass('rotate moved pixel', rotPx > 200, 'v=' + rotPx);
 
-  // ---- resize ----
+  // resize
   resizeWork(64, 64, true);
   pass('resize changed size', workW === 64 && workH === 64);
   pass('resize kept content', countPixels(layerCtx(), 0, 0, 64, 64) > 0);
 
-  // ---- crop ----
+  // crop
   workW = 128; workH = 128;
   paintCanvas.width = workW; paintCanvas.height = workH;
   activeLayer.canvas.width = workW; activeLayer.canvas.height = workH;
@@ -192,7 +199,7 @@ async function main() {
   pass('crop changed size', workW === 80 && workH === 80, workW + 'x' + workH);
   pass('crop kept content', countPixels(layerCtx(), 0, 0, workW, workH) > 1000);
 
-  // ---- move tool: moves content, does NOT duplicate it ----
+  // move tool: moves content, does NOT duplicate it
   layerCtx().clearRect(0, 0, workW, workH);
   layerCtx().fillStyle = '#f00';
   layerCtx().fillRect(10, 10, 20, 20);
@@ -211,7 +218,7 @@ async function main() {
   pass('move tool moved content', mvAtNew > 200, 'new=' + mvAtNew);
   pass('move tool did not copy origin', mvAtOrigin === 0, 'origin=' + mvAtOrigin);
 
-  // ---- transform ----
+  // transform
   workW = 128; workH = 128;
   paintCanvas.width = workW; paintCanvas.height = workH;
   activeLayer.canvas.width = workW; activeLayer.canvas.height = workH;
@@ -230,7 +237,7 @@ async function main() {
   let movedRed = d5[((50 * workW + 50) * 4)];
   pass('transform moved content', movedRed > 200, 'v=' + movedRed);
 
-  // ---- transform scale: anchored, non-uniform ----
+  // transform scale: anchored, non-uniform
   layerCtx().clearRect(0, 0, workW, workH);
   layerCtx().fillStyle = '#0f0';
   layerCtx().fillRect(20, 20, 40, 40);
@@ -253,7 +260,7 @@ async function main() {
   pass('transform scale non-uniform', Math.abs(stretchedH - 80) < 2 && stretchedW > 150, 'w=' + Math.round(stretchedW) + ' h=' + Math.round(stretchedH));
   commitXfrm();
 
-  // ---- pressure-aware dab spacing: light strokes must stay continuous ----
+  // pressure-aware dab spacing: light strokes must stay continuous
   // A Krita pixel brush whose Size option maps pressure onto radius: at press
   // 0.1 the dab is ~1.5px but base-12px spacing would leave big gaps between
   // dabs. Spacing must follow the pressure-scaled radius.
@@ -319,7 +326,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  const chromium = spawn('chromium', [
+  const chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

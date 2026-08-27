@@ -172,7 +172,6 @@
     renderAll();
   }
 
-  // Sync the right-panel controls + readout to the current camera state.
   function renderCameraPanel() {
     var p = byId('cameraPanel');
     if (!p) return;

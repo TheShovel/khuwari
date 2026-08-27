@@ -5,6 +5,8 @@
 // baseRadius, so resizing only changed the opening/seal dabs while the stroke
 // stayed at the preset's original size.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -33,6 +35,11 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
@@ -104,7 +111,7 @@ async function main() {
   log('small size (r=3):  bbox height=' + small.h + 'px inked=' + small.n);
   log('big size (r=30):   bbox height=' + big.h + 'px inked=' + big.n);
 
-  // --- pixel brushes: painted diameter must match the slider exactly ---
+  // pixel brushes: painted diameter must match the slider exactly
   const basicBuf = await fetchU8('/brushes/b)_Basic-5_Size_default.kpp');
   const basic = await parseKppBytes('b)_Basic-5_Size_default.kpp', basicBuf);
   function drawPixel(radius) {
@@ -135,7 +142,7 @@ async function main() {
   log('pixel r=10: height=' + p1.h + ' (expect ~' + (2*10 + 2*scatterPx) + ')  r=25: height=' + p2.h + ' (expect ~' + (2*25 + 2*scatterPx) + ')');
   const okPixel = Math.abs(p1.h - (2*10 + 2*scatterPx)) <= 5 && Math.abs(p2.h - (2*25 + 2*scatterPx)) <= 5;
 
-  // --- 1px brush must NOT scatter wildly (grainOffset now scales with radius) ---
+  // 1px brush must NOT scatter wildly (grainOffset now scales with radius)
   // libmypaint: offset_by_random * base_radius, and base_radius = the size the
   // user picked. A 1px (r=0.5) pencil stroke should stay within ~a few px.
   const tiny = strokeStats(drawStroke(0.5));  // slider 1px
@@ -180,7 +187,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  chromium = spawn('chromium', [
+  chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

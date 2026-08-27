@@ -70,7 +70,7 @@
   }
   function play() {
     if (state.playing || !buildPlaybackFrames().length) return;
-    if (state.playhead >= playbackEnd()) state.playhead = 0; // at the end: restart
+    if (state.playhead >= playbackEnd()) state.playhead = 0;
     state.playing = true;
     lastPreview = null; // force a clean redraw, clearing editor-only ghosts/markers
     playStart = state.playhead;

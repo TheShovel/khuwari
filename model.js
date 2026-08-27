@@ -1,16 +1,8 @@
 /* model.js: local ML frame interpolation (RIFE, ONNX) for Keyframe Studio.
- *
- * No server, no API: when the user enables "ML inbetweens" the app downloads two
- * things in-browser:
- *   1. ONNX Runtime Web (wasm inference engine) from a CDN, and
- *   2. a small RIFE-style frame-interpolation ONNX model (concatenated-frame
- *      tensor in [1,6,H,W], interpolated frame out [1,3,H,W]).
- * After that everything runs locally in the page; nothing is sent anywhere.
- * If the runtime or model cannot be fetched (offline / blocked), the app falls
- * back to the pure mesh morph; ML inbetweens are strictly optional.
- *
- * Swap ORT_VERSION / ORT_CDN / MODEL_URL below to change sources.
- */
+ * No server, no API: the runtime + model are downloaded in-browser once, then
+ * everything runs locally; nothing is sent anywhere. If the fetch fails, callers
+ * fall back to the pure mesh morph. Swap ORT_VERSION / ORT_CDN / MODEL_URL to
+ * change sources. */
 (typeof self !== 'undefined' ? self : window).KHUWARI_MODEL = (function () {
   'use strict';
 

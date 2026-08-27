@@ -172,7 +172,6 @@
       return c;
     }
     if (!bigger) return Promise.resolve(drawScaled(canvas));
-    // Target is larger: try the ML upscaler first.
     if (workers.length) {
       return upscaleViaWorker(canvas, transparent).then(function (hi) {
         return drawScaled(hi);
@@ -316,7 +315,6 @@
     frames.forEach(function (f, i) {
       chain = chain.then(function () {
         if (state.exportCancel) throw new Error('Export cancelled');
-        // Composite every layer at this frame's time (ML-upscaled to target).
         // PNG sequence keeps transparency (no white backdrop).
         return exportCanvas(f, target, true).then(function (canvas) {
           return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
@@ -645,7 +643,6 @@
 
     setExportProgress((isMp4 ? 'Recording MP4…' : 'Recording WebM…'), 1);
 
-    // Composite (and ML-upscale) every layer per frame time, then record.
     // Frames are rendered one at a time (the worker runs one upscale job at a
     // time), so a long high-res export streams through the progress bar.
     var rendered = null;

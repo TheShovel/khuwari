@@ -5,6 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { assertChrome } = require('../tools/chrome');
+const CHROME = assertChrome();
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = 9334;
@@ -52,7 +54,7 @@ const BUCKETS = {
 };
 
 async function main() {
-  const chrome = spawn('chromium', ['--headless=new', '--no-sandbox', '--disable-gpu',
+  const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu',
     '--remote-debugging-port=' + PORT, '--remote-allow-origins=*', 'about:blank'], { stdio: 'ignore' });
   process.on('exit', () => { try { chrome.kill(); } catch (e) {} });
   const cdp = await connect(PORT);

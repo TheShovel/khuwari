@@ -3,6 +3,8 @@
 // Drives the real zoomAt/fitCanvas math from src/paint.js and checks that the
 // canvas point under the cursor stays fixed while zooming.
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -31,6 +33,11 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
@@ -75,7 +82,7 @@ async function main() {
   fitView();
   log('initial zoom=' + paintZoom.toFixed(2) + ' pan=' + paintPanX.toFixed(1) + ',' + paintPanY.toFixed(1));
 
-  // --- 1. zoom about the cursor keeps the canvas point under the cursor fixed
+  // 1. zoom about the cursor keeps the canvas point under the cursor fixed
   const anchor = { x: 600, y: 250 }; // a point in the wrap (near the canvas edge)
   const before = canvasUnder(anchor.x, anchor.y);
   zoomAt(anchor.x, anchor.y, 1.25);   // zoom in
@@ -93,7 +100,7 @@ async function main() {
   log('zoom drift back: ' + driftBack.toFixed(3) + 'px (expect ~0)');
   const okBack = driftBack < 0.05 && Math.abs(paintZoom - 1) < 0.01;
 
-  // --- 2. pan moves the canvas by the pointer delta
+  // 2. pan moves the canvas by the pointer delta
   const panBefore = { x: paintPanX, y: paintPanY };
   // The canvas point shown at (460,275) before panning must appear at
   // (500,300) after panning by (+40,+25) viewport px.
@@ -105,14 +112,14 @@ async function main() {
   log('pan consistency drift: ' + panDrift.toFixed(3) + ' (expect ~0)');
   const okPan = panDrift < 0.05;
 
-  // --- 3. fit re-centers: zoom back to 1 and pan to 0
+  // 3. fit re-centers: zoom back to 1 and pan to 0
   fitView();
   const fitOk = Math.abs(paintZoom - 1) < 0.001 && paintPanX === 0 && paintPanY === 0;
   log('fit resets: ' + (fitOk ? 'yes' : 'no'));
   const zv = document.getElementById('paintZoomVal');
   log('zoom label after fit: ' + zv.textContent);
 
-  // --- 4. zoom clamp range
+  // 4. zoom clamp range
   for (let i = 0; i < 60; i++) zoomAt(400, 300, 1.15);
   log('zoom clamped max: ' + paintZoom.toFixed(2) + ' (expect <= 24)');
   const okClamp = paintZoom <= 24.01;
@@ -149,7 +156,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  chromium = spawn('chromium', [
+  chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

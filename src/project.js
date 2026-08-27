@@ -224,7 +224,6 @@
     });
   }
 
-  // File menu: export the project as a .khuwari file (Save) / import one (Load).
   function saveProjectFile() {
     var blob = new Blob([JSON.stringify(projectData(), null, 2)], { type: 'application/json' });
     downloadBlob(blob, 'khuwari-project.khuwari', 'application/json');
@@ -268,13 +267,12 @@
     reader.readAsText(file);
   }
 
-  // ---- start screen ----
+  // start screen
 
   function enterApp() {
     el.startScreen.classList.add('hidden');
   }
 
-  // Wipe everything back to a fresh empty project.
   function newProject() {
     cancelRun();
     pause();
@@ -320,7 +318,7 @@
     });
   }
 
-  // ---- unsaved-changes guard ------------------------------------------------
+  // unsaved-changes guard
   // Baseline snapshot of the fully serialized project, captured whenever the
   // project is saved, loaded or reset. Every edit - keyframes, layers, dots,
   // paint, camera, audio - shows up automatically in the next comparison, so no

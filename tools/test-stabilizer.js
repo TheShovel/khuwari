@@ -3,6 +3,8 @@
 // Draws the same pointer path through each mode's pump loop and reports
 // how the rendered strokes differ (dab counts, painted length, pixel diffs).
 const { spawn } = require('child_process');
+const { assertChrome } = require('./chrome');
+const CHROME = assertChrome();
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -31,12 +33,17 @@ const server = http.createServer((req, res) => {
 
 const harness = `<!doctype html><html><body>
 <script src="/src/state.js"></script>
+<script src="/src/paint-color.js"></script>
+<script src="/src/paint-brushes.js"></script>
+<script src="/src/paint-parsers.js"></script>
+<script src="/src/paint-layers.js"></script>
+<script src="/src/paint-tools.js"></script>
 <script src="/src/paint.js"></script>
 <script>
 const lines = [];
 function log(msg) { lines.push(msg); console.log('HARNESS ' + msg); }
 
-// --- manual rAF queue so pump() runs deterministically ---
+// manual rAF queue so pump() runs deterministically
 let rafQueue = [];
 let rafRunning = false;
 const realRaf = window.requestAnimationFrame;
@@ -52,7 +59,7 @@ function flushRaf() {
   if (cb) { cb(); }
 }
 
-// --- DOM stubs for paint.js module references ---
+// DOM stubs for paint.js module references
 const stubEls = {};
 function makeStub(id) {
   return {
@@ -230,7 +237,7 @@ async function main() {
   log('diff none-vs-stabilizer: ' + JSON.stringify(dNS));
   log('diff none-vs-basic: ' + JSON.stringify(dNB));
 
-  // --- release-flush: fast stroke + release while the stabilizer lags ---
+  // release-flush: fast stroke + release while the stabilizer lags
   // Feed a fast stroke (10px per sample), stop, then run the onPaintUp flush
   // logic. The stroke must reach the cursor instead of cutting off short.
   {
@@ -263,7 +270,7 @@ async function main() {
       rawLatest = { x: pt.x, y: pt.y, press };
     }
     const lagBefore = Math.hypot(rawLatest.x - smoothPt.x, rawLatest.y - smoothPt.y);
-    // --- replicate the new onPaintUp flush ---
+    // replicate the new onPaintUp flush
     drawing = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
     if (rawLatest && (rawPoints.length || Math.hypot(rawLatest.x - smoothPt.x, rawLatest.y - smoothPt.y) > 0.5)) {
@@ -336,7 +343,7 @@ function cdp(ws, id, method, params) {
 
 async function run() {
   await new Promise(resolve => server.listen(PORT, resolve));
-  chromium = spawn('chromium', [
+  chromium = spawn(CHROME, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-extensions',
     '--remote-debugging-port=' + CDP_PORT, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });

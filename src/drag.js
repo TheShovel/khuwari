@@ -39,7 +39,7 @@
       // order, so crossing simply reorders the sequence and everything follows.
       if (state.snap) t = Math.round(t * state.fps) / state.fps;
       kf.time = t;
-      retimeAllFrames();  // gap overlays + dots follow live
+      retimeAllFrames();
       renderLane();
       attachTip();
       updateTip(t);
@@ -101,7 +101,7 @@
       if (state.snap) h = Math.round(h * state.fps) / state.fps;
       h = Math.max(minHold, h);
       kf.hold = h;
-      retimeAllFrames();  // gap overlays + dots follow live
+      retimeAllFrames();
       renderLane();
       attachTip();
       updateTip(h);

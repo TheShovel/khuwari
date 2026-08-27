@@ -177,11 +177,14 @@
     return kf;
   }
 
-  // The context menu is a single fixed-position element; showKfMenu positions
-  // it at the cursor and enables the items that apply. Right-clicking a chip
-  // selects it first, so the menu always acts on what you clicked.
-  function showKfMenu(clientX, clientY, kfId, pasteAt, pasteLayer) {
+  // The context menu is a single fixed-position element shared by keyframes
+  // and color dots; showKfMenu positions it at the cursor and enables the
+  // items that apply. Right-clicking a chip selects it first, so the menu
+  // always acts on what you clicked. Dot mode swaps the labels to Copy/Paste
+  // dot and hides the paint entry (dots have no paint editor).
+  function showKfMenu(clientX, clientY, kfId, pasteAt, pasteLayer, dotId, dotTarget) {
     hideKfMenu();
+    var dotMode = !!(dotId || dotTarget);
     var menu = el.kfMenu;
     menu.style.left = clientX + 'px';
     menu.style.top = clientY + 'px';
@@ -190,11 +193,24 @@
     if (r.right > window.innerWidth - 6) menu.style.left = Math.max(6, clientX - r.width) + 'px';
     if (r.bottom > window.innerHeight - 6) menu.style.top = Math.max(6, clientY - r.height) + 'px';
     menu._kfId = kfId || null;
+    menu._dotId = dotId || null;
     menu._pasteAt = pasteAt;
     menu._pasteLayer = pasteLayer;
-    el.kfMenuDelete.classList.toggle('disabled', !kfId);
-    el.kfMenuCopy.classList.toggle('disabled', !kfId);
-    el.kfMenuPaste.classList.toggle('disabled', !copiedKeyframe);
+    menu._pasteDot = dotMode;
+    el.kfMenuDelete.classList.toggle('disabled', !kfId && !dotId);
+    el.kfMenuCopy.classList.toggle('disabled', !kfId && !dotId);
+    // Paste needs the clipboard for the target type: a dot for dot targets,
+    // a keyframe for frame targets. This keeps the item from being a no-op
+    // when the other clipboard holds something.
+    el.kfMenuPaste.classList.toggle('disabled', !(dotMode ? copiedDot : copiedKeyframe));
+    var paintBtn = byId('btnKfPaint');
+    if (paintBtn) paintBtn.classList.toggle('hidden', dotMode);
+    var sep = menu.querySelector('.menu-sep');
+    if (sep) sep.classList.toggle('hidden', dotMode);
+    var word = dotMode ? 'dot' : 'frame';
+    el.kfMenuCopy.querySelector('span').textContent = 'Copy ' + word;
+    el.kfMenuPaste.querySelector('span').textContent = 'Paste ' + word;
+    el.kfMenuDelete.querySelector('span').textContent = 'Delete ' + word;
   }
 
   function hideKfMenu() {

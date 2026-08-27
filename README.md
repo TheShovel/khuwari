@@ -63,7 +63,16 @@ Loading is logged to the browser console with a `[brushes]` prefix, so a failed 
 
 The editor code lives in `src/` as plain scripts, one file per concern (state, elements, workers, timeline, generation, export, paint, and so on). No build step: `editor.html` loads them in order, and the whole editor shares one global scope. Edit a file in `src/` and refresh the page.
 
-Roughly ordered by dependency, so read them top to bottom: `src/header.js` pulls in the vendor globals (the morph fallback, GIF encoder, ML model), `src/state.js` holds the project state, and `src/footer.js` starts everything with `boot()` (defined in `src/boot.js`).
+Roughly ordered by dependency, so read them top to bottom: `src/header.js` pulls in the vendor globals (the morph fallback, GIF encoder, ML model), `src/state.js` holds the project state, and `src/footer.js` starts everything with `boot()` (defined in `src/boot.js`). Because the paint tool grew large, it now spans `src/paint.js` plus the `src/paint-*.js` files loaded just before it: `paint-color.js` (colour wheel), `paint-brushes.js` (dab/stamping engine), `paint-parsers.js` (Krita/MyPaint/GIMP brush parsing), `paint-layers.js` (layers + onion skin) and `paint-tools.js` (selection and the rest of the tools).
+
+## Testing
+
+The repo has two kinds of tests, both plain Node scripts with no framework:
+
+- **Site tests** — `site_tools/test-site.js`, or `npm run test:site`. Parses the site pages with jsdom and checks structure, nav, links and the docs search index. Needs `jsdom`, so run `npm install` at the repo root once.
+- **Editor tests** — the `tools/*.js` scripts. These drive the real editor (or the paint engine) in a headless Chromium over CDP and assert on real rendering and parsing. They need a Chromium/Chrome binary; common names (`chromium`, `google-chrome`, `msedge`, ...) are auto-detected, and you can force one with the `KHUWARI_CHROME` (or `CHROME_BIN`) environment variable. Without one they exit with a clear message instead of a confusing spawn error.
+
+Each editor test runs standalone, e.g. `node tools/test-paint.js` or `node tools/smoke-paint.js` (the scripts use fixed ports each, so run them one at a time).
 
 ## Our stance on AI
 
