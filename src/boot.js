@@ -8,10 +8,13 @@
     [el.settingsMenu, el.fileMenu, el.exportMenu, el.layerMenu, el.onionMenu, el.kfMenu].forEach(function (m) { if (m) m.classList.add('hidden'); });
   }
 
+  var loadingMaxPct = 0;
+
   function setLoadingProgress(label, pct) {
-    el.loadingFill.style.width = clamp(pct, 0, 100) + '%';
+    loadingMaxPct = Math.max(loadingMaxPct, clamp(pct, 0, 100));
+    el.loadingFill.style.width = loadingMaxPct + '%';
     el.loadingLabel.textContent = label;
-    el.loadingMeta.textContent = Math.round(pct) + '%';
+    el.loadingMeta.textContent = Math.round(loadingMaxPct) + '%';
   }
 
   function onModelProgress(info) {
@@ -45,6 +48,7 @@
   function loadModelWithOverlay() {
     el.loadingOverlay.classList.remove('hidden');
     el.btnLoadingRetry.classList.add('hidden');
+    loadingMaxPct = 0;
     setLoadingProgress('Preparing…', 0);
     el.loadingSub.textContent = 'Fetching the local ML engine + model (one-time, ~21 MB)…';
     modelGate = new Promise(function (resolve) { modelGateResolve = resolve; });
