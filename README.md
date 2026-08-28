@@ -9,15 +9,13 @@
   <img src="https://img.shields.io/github/last-commit/TheShovel/khuwari?style=flat-square&logo=git" alt="Last Commit">
 </div>
 
-</div>
+Khuwari is an in-browser animation tool that fills in the frames between your hand drawn keyframes, using machine learning and algorithms. It is fully local and runs entirely in your browser, even on weaker hardware.
 
-Khuwari is a browser-based animation tool that fills in the frames between your keyframes with machine learning. Everything runs locally, so your images and projects never leave your machine.
+## How it works
 
-## What it does
+What makes it different from other animation apps, is how little of the animation you actually have to draw by hand. All you really need to make a full shot with this is a storyboard and some rough frames that you can color in dynamically inside the editor, or refine later and just update them quickly. No tweening curves or tons of hours spent drawing inbetweens. You can actually focus on your work rather than on the subtle stuff that would take way longer than they are worth (especially for indie animation and game development). 
 
-You make the keyframes, Khuwari makes the inbetweens. Draw or import your poses, place them on the timeline, and a machine-learning model (RIFE, running in your browser via ONNX Runtime Web) generates the frames between them. Each gap has its own settings for how the motion behaves. Nothing is baked in until you export, so you can edit a keyframe or change a gap setting any time and the affected frames regenerate.
-
-What makes it different from other animation apps is how little of the drawing you have to do. Most of them make you create every frame by hand, or wrestle with tweening curves. With Khuwari you draw the key poses and it handles the frames in between, so the boring grind just isn't there, letting you focus on actually making what your vision is. There's nothing to install either, it runs right in a browser, and the whole workflow lives in one window: sketch in the built-in paint tool, animate on the timeline, add a camera move or reference audio, export, done.
+You draw your animation keyframes inside the app or in your favorite animation software, you drag them onto the timeline and Khuwari will fill in the gaps for you. It gives you full control over the timing, the amount of inbetweens, the type of interpolation and if you even want interpolation at all.
 
 ## Try it
 
@@ -31,24 +29,22 @@ python3 -m http.server 4000
 
 Then open http://localhost:4000/editor.html for the editor itself.
 
-## How it works
+## Tutorials
 
-The docs walk through the whole workflow, from adding your images to exporting the finished animation. Start with [Getting started](https://theshovel.rocks/khuwari/docs/getting-started.html).
+There's full documentation on our website. You can view all the categories and search for topics [here](https://theshovel.rocks/khuwari/docs), or you can read the starter guide at [Getting started](https://theshovel.rocks/khuwari/docs/getting-started.html).
 
 ## Development
 
-The editor code lives in `src/` as plain scripts, one file per thing (state, elements, workers, timeline, generation, export, paint, and so on). There is no build step: `editor.html` loads them in order, and the whole editor shares one global scope. Edit a file in `src/` and refresh the page.
-
-The files are roughly ordered by dependency, so read them top to bottom: `src/header.js` pulls in the vendor globals (the morph fallback, GIF encoder, ML model), `src/state.js` holds the project state, and `src/footer.js` starts everything with `boot()` (defined in `src/boot.js`). The paint tool grew large, so it now spans `src/paint.js` plus the `src/paint-*.js` files loaded just before it: `paint-color.js` (colour wheel), `paint-brushes.js` (dab/stamping engine), `paint-parsers.js` (Krita/MyPaint/GIMP brush parsing), `paint-layers.js` (layers + onion skin) and `paint-tools.js` (selection and the rest of the tools).
+The actual editor code is inside `src/` as plain pure JavaScript. Every category has its own file, and is loaded inside the `editor.html` in the order of dependency.
 
 ## Testing
 
-The repo has two kinds of tests, both plain Node scripts with no framework:
+The repo has a testing suite with some scripts that require Node.
 
-- **Site tests:** `site_tools/test-site.js`, or `npm run test:site`. Parses the site pages with jsdom and checks structure, nav, links and the docs search index. Needs `jsdom`, so run `npm install` at the repo root once.
-- **Editor tests:** the `tools/*.js` scripts. These drive the real editor (or the paint engine) in a headless Chromium over CDP and assert on real rendering and parsing. They need a Chromium/Chrome binary; common names (`chromium`, `google-chrome`, `msedge`, ...) are auto-detected, and you can force one with the `KHUWARI_CHROME` (or `CHROME_BIN`) environment variable.
+- *Site tests* -  used for testing the landing page. You probably won't mess with this much. Run by doing `npm run test:site`
+- *Editor tests* - these are the actual important ones you might want to use often. These are in individual scripts that you have to run manually with Node depending on what you need. These also need a Chromium environment. By default it searches for common names (chromium, google-chrome, msedge), but if all of them fail, you have to either install one of them, or point towards your own path by setting `KHUWARI_CHROME` or `CHROME_BIN` in your environment variables.
 
-Each editor test runs standalone, e.g. `node tools/test-paint.js` or `node tools/smoke-paint.js`. The scripts use fixed ports, so run them one at a time.
+Make sure to run `npm install` before running them.
 
 ## Our stance on AI
 
@@ -58,4 +54,4 @@ We don't support AI-generated "art". To us, AI is a practical tool for tedious t
 
 ## Credits
 
-Khuwari uses RIFE and ONNX Runtime Web for machine-learning inbetweens, gifenc for GIF encoding, and Mediabunny for video muxing. Everything else was written for Khuwari. See the [credits page](https://theshovel.rocks/khuwari/credits.html) for the full list.
+The full credits for 3rd party libraries and tools can be found on the [credits page](https://theshovel.rocks/khuwari/credits) on our website.
