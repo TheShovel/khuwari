@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/github/last-commit/TheShovel/khuwari?style=flat-square&logo=git" alt="Last Commit">
 </div>
 
+</div>
 Khuwari is an in-browser animation tool that fills in the frames between your hand drawn keyframes, using machine learning and algorithms. It is fully local and runs entirely in your browser, even on weaker hardware.
 
 ## How it works
