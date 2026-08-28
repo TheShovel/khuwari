@@ -231,20 +231,34 @@ body::after {
 }
 .btn:active {
   filter: brightness(0.92);
-  transform: translateY(0) scale(0.96);
   box-shadow: none;
   transition-duration: 0.05s;
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn.icon { padding: 6px 9px; min-width: 32px; }
 .btn svg { flex: 0 0 auto; }
-/* Click pop: JS adds this class briefly on pointerdown for tactile feedback. */
-.btn.pop { animation: btn-pop 0.28s ease; }
+/* Icons inside buttons are decoration only: they must never capture pointer
+   events. If the svg is the pointer target, a click aimed at the icon can
+   fail to reach the button (Safari doesn't bubble svg clicks into the button
+   reliably), and the pop animation below moves the icon mid-press. Making
+   the svg transparent to hits means the button itself is always the target. */
+.btn svg, .btn svg * { pointer-events: none; }
+/* Click pop: JS adds this class briefly on pointerdown for tactile feedback.
+   The icon animates, not the button itself, so the clickable box never moves
+   and a tap near an edge can't land outside the button mid-press. Text-only
+   buttons get a background pulse instead. */
+.btn.pop { animation: btn-pop-bg 0.28s ease; }
+.btn.pop svg { animation: btn-pop 0.28s ease; }
 @keyframes btn-pop {
   0%   { transform: scale(1); }
-  35%  { transform: scale(0.94); }
-  70%  { transform: scale(1.03); }
+  35%  { transform: scale(0.8); }
+  70%  { transform: scale(1.08); }
   100% { transform: scale(1); }
+}
+@keyframes btn-pop-bg {
+  0%   { background: var(--bg-elev2); }
+  40%  { background: var(--bg-elev3); }
+  100% { background: var(--bg-elev2); }
 }
 .btn.active {
   background: var(--accent);
@@ -1522,6 +1536,7 @@ body.dragging-layer { cursor: grabbing; user-select: none; }
   z-index: 100;
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
   max-width: 80vw;
+  pointer-events: none; /* informational only: never swallow clicks */
   animation: toast-in 0.24s cubic-bezier(0.34,1.15,0.64,1);
 }
 @keyframes toast-in {
@@ -1712,6 +1727,9 @@ button:focus-visible {
   .ruler, .lane { touch-action: pan-y; }
   .playhead { touch-action: pan-y; }
   .tl-transport { gap: 6px; padding: 7px 8px; }
+  /* steady finger targets: transport icon buttons get wider so a tap aimed at
+     a button's right side can't land in the gap between buttons */
+  .tl-transport .btn.icon { min-width: 40px; min-height: 40px; }
   .timeline-hint { flex-wrap: wrap; }
 
   /* transport + status take less room so the preview gets more */

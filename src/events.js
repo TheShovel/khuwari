@@ -732,6 +732,11 @@
       // app's undo() would also fire on the same keystroke.
       if (window.paintOpen) return;
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
+      // With a button focused, Space activates that button natively (click on
+      // keyup). Don't ALSO toggle playback on top of it and don't preventDefault
+      // it away - otherwise one Space press both steps/presses the button and
+      // toggles play, or toggles playback twice and looks like nothing happened.
+      if (e.target && e.target.tagName === 'BUTTON') return;
       if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
       if (e.key === 'Delete' || e.key === 'Backspace') { deleteKeyframe(state.selectedId); }
       else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }

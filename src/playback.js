@@ -69,7 +69,13 @@
     return keys[keys.length - 1].time + keyframeHold(keys[keys.length - 1]);
   }
   function play() {
-    if (state.playing || !buildPlaybackFrames().length) return;
+    if (state.playing || !buildPlaybackFrames().length) {
+      // Nothing on the timeline: don't just swallow the press - say why.
+      if (!state.playing && typeof toast === 'function') {
+        toast('Nothing to play yet - drop an image on the timeline first', 2600);
+      }
+      return;
+    }
     if (state.playhead >= playbackEnd()) state.playhead = 0;
     state.playing = true;
     lastPreview = null; // force a clean redraw, clearing editor-only ghosts/markers
