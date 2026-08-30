@@ -206,6 +206,19 @@ body.dragging-asset * { cursor: grabbing !important; }
   flex-direction: column;
   gap: 12px;
 }
+/* The collapsible wrapper sits between the panel's gap flow and its children
+   (.collapsible-body > .collapsible-inner), which stacked flush with no air
+   between cards, fields, button rows and checkboxes. Restore the panel
+   rhythm inside the foldable body. */
+.gap-panel > .collapsible-body > .collapsible-inner,
+#kfSection > .collapsible-body > .collapsible-inner {
+  display: flex;
+  flex-direction: column;
+}
+.gap-panel > .collapsible-body > .collapsible-inner { gap: 10px; }
+#kfSection > .collapsible-body > .collapsible-inner { gap: 12px; }
+/* Button rows inside the side panels breathe too (matches #kfSection). */
+.gap-panel .menu-row { gap: 8px; }
 #kfSection .kf-card {
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }

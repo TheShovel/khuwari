@@ -68,10 +68,10 @@
 .paint-body { display: flex; min-height: 0; flex: 1; }
 
 /* Docker panels: title strip + body, like Krita's dockers. */
-.paint-docker { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.paint-docker { padding: 10px 12px; border-bottom: 1px solid var(--border); }
 .docker-title { display: flex; align-items: center; gap: 6px; font-size: 10.5px;
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
-  color: var(--muted); margin-bottom: 6px; padding-bottom: 4px;
+  color: var(--muted); margin-bottom: 8px; padding-bottom: 5px;
   border-bottom: 1px solid var(--border); }
 .paint-left { width: 190px; flex: 0 0 auto; border-right: 1px solid var(--border);
   overflow-y: auto; background: var(--bg-elev); }
@@ -129,7 +129,7 @@
 .paint-cw-hex .text-input { font-family: var(--mono); text-align: center; }
 
 /* Recent-colour swatch row (paint history, newest first). */
-.paint-cw-recent { margin-top: 9px; }
+.paint-cw-recent { margin-top: 10px; }
 .paint-cw-recent-label { font-size: 11px; color: var(--muted); margin: 0 0 5px; text-align: center; }
 .paint-recent-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
 .paint-recent-swatch {
@@ -176,7 +176,7 @@
 
 /* Brush palette: Krita-style grid of square previews on white, no labels. */
 .paint-brush-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
-  gap: 4px; margin-bottom: 8px; max-height: 240px; overflow-y: auto; }
+  gap: 5px; margin-bottom: 10px; max-height: 240px; overflow-y: auto; }
 .paint-brush { display: flex; align-items: center; justify-content: center;
   width: 100%; aspect-ratio: 1 / 1; padding: 3px; border-radius: 5px;
   border: 1px solid transparent; background: transparent;
@@ -193,9 +193,9 @@
   border: 1px solid rgba(var(--accent-rgb),0.25); padding: 1px 6px; border-radius: 999px; }
 
 /* Layer list (Krita-style: thumbnail + eye + name, icon toolbar, props). */
-.paint-layer-list { display: flex; flex-direction: column; gap: 2px;
-  max-height: 200px; overflow-y: auto; margin-bottom: 5px; }
-.paint-layer { display: flex; align-items: center; gap: 6px; padding: 3px 4px;
+.paint-layer-list { display: flex; flex-direction: column; gap: 3px;
+  max-height: 200px; overflow-y: auto; margin-bottom: 9px; }
+.paint-layer { display: flex; align-items: center; gap: 6px; padding: 4px 5px;
   border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
 .paint-layer:hover { background: var(--bg-elev3); }
 .paint-layer.active { border-color: var(--accent); background: rgba(var(--accent-rgb),0.16); }
@@ -215,8 +215,8 @@
 .paint-layer-eye.off { color: var(--bg-elev3); }
 .paint-layer-eye.off:hover { color: var(--muted); }
 /* Docker toolbar: flat icon buttons consistent with the tools column. */
-.paint-layer-toolbar { display: flex; align-items: center; gap: 2px;
-  padding: 5px 0 7px; border-top: 1px solid var(--border); }
+.paint-layer-toolbar { display: flex; align-items: center; gap: 4px;
+  padding: 7px 0 9px; border-top: 1px solid var(--border); }
 .paint-icon-btn { display: flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; padding: 0; border-radius: 6px;
   border: 1px solid transparent; background: transparent; color: var(--muted);
@@ -225,10 +225,10 @@
 .paint-icon-btn:disabled { opacity: 0.35; cursor: default; }
 .paint-icon-btn.danger:hover:not(:disabled) { color: var(--danger); }
 .paint-layer-tb-sep { width: 1px; height: 18px; flex: 0 0 auto;
-  background: var(--border); margin: 0 6px; }
+  background: var(--border); margin: 0 8px; }
 /* Active-layer opacity + blend props (opacity is slider + percent spinbox,
    matching the top-toolbar brush controls). */
-.paint-layer-props { display: flex; flex-direction: column; gap: 6px; }
+.paint-layer-props { display: flex; flex-direction: column; gap: 8px; }
 .paint-layer-prop { display: flex; align-items: center; gap: 8px; font-size: 11px;
   color: var(--muted); }
 .paint-layer-oprow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
@@ -241,11 +241,11 @@
 
 /* Layer filters docker: one row per filter on the active layer, with sliders
    that preview live (Krita-style non-destructive effects). */
-.paint-filter-list { display: flex; flex-direction: column; gap: 6px; }
+.paint-filter-list { display: flex; flex-direction: column; gap: 7px; }
 .paint-filter-row { border: 1px solid var(--border); border-radius: 6px;
-  padding: 5px 6px 7px; background: var(--bg-elev2); }
+  padding: 6px 7px 8px; background: var(--bg-elev2); }
 .paint-filter-head { display: flex; align-items: center; gap: 6px;
-  margin-bottom: 4px; }
+  margin-bottom: 5px; }
 .paint-filter-name { flex: 1; min-width: 0; font-size: 11px; font-weight: 600;
   color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .paint-filter-val { font-size: 10px; color: var(--muted); }
@@ -253,7 +253,7 @@
   font-size: 15px; line-height: 1; padding: 0; border-radius: 5px; }
 .paint-filter-row .slider { width: 100%; height: 14px; }
 .paint-filter-subrow { display: flex; align-items: center; gap: 6px;
-  margin-top: 4px; }
+  margin-top: 5px; }
 .paint-filter-n { flex: 0 0 auto; width: 26px; font-size: 10px;
   color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .paint-filter-subrow .slider { flex: 1; min-width: 0; height: 14px; }
