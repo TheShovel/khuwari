@@ -106,6 +106,34 @@ async function pageEval(expr) {
 
 // page-side art + helpers
 const ART = `
+// Doodles (white line art PNGs) become the shot art: loaded once per page,
+// drawn onto 512 canvases, and re-inked BLACK so they read on the white
+// canvas background (white lines would disappear).
+// NOTE: ART is re-injected per setup, so the loader must be idempotent -
+// redefining it would wipe the populated cache before the setups read it.
+window.__doodleSrc = window.__doodleSrc || {};
+window.__doodles = window.__doodles || Promise.all([1, 2, 3, 4, 5, 6, 7].map(function (n) {
+  return new Promise(function (res) {
+    var img = new Image();
+    img.onload = function () {
+      var C = 512;
+      var c = document.createElement('canvas'); c.width = C; c.height = C;
+      var g = c.getContext('2d');
+      var s = Math.min(C * 0.85 / img.width, C * 0.85 / img.height);
+      var w = img.width * s, h = img.height * s;
+      g.drawImage(img, (C - w) / 2, (C - h) / 2, w, h);
+      var d = g.getImageData(0, 0, C, C);
+      for (var i = 0; i < d.data.length; i += 4) {
+        if (d.data[i + 3] > 0) { d.data[i] = 0; d.data[i + 1] = 0; d.data[i + 2] = 0; }
+      }
+      g.putImageData(d, 0, 0);
+      window.__doodleSrc[n] = c.toDataURL('image/png');
+      res();
+    };
+    img.onerror = function () { window.__doodleSrc[n] = null; res(); };
+    img.src = 'doodles/doodle' + n + '.png';
+  });
+}));
 window.__art = {
   char: function (x, color) {
     var c = document.createElement('canvas'); c.width = 512; c.height = 512;
@@ -189,11 +217,14 @@ window.__base = function (opts) {
   state.playhead = opts.playhead || 0;
   state.zoom = opts.zoom || 220;
   state.fps = 12;
+  // Doodle art (black-inked): 1-3 are the three hero poses, 4 is the fill
+  // subject (its interior is one closed region — verified with the app's own
+  // floodFillMask). The procedural __art.* drawers stay for reference.
   state.assets = [
-    { img: __art.char(140, '#c3ab7d'), name: 'hero-left.png', w: 512, h: 512 },
-    { img: __art.char(256, '#c3ab7d'), name: 'hero-mid.png', w: 512, h: 512 },
-    { img: __art.char(372, '#c3ab7d'), name: 'hero-right.png', w: 512, h: 512 },
-    { img: __art.ring(), name: 'ring.png', w: 512, h: 512 }
+    { img: __doodleSrc[1], name: 'doodle1.png', w: 512, h: 512 },
+    { img: __doodleSrc[2], name: 'doodle2.png', w: 512, h: 512 },
+    { img: __doodleSrc[3], name: 'doodle3.png', w: 512, h: 512 },
+    { img: __doodleSrc[4], name: 'doodle4.png', w: 512, h: 512 }
   ];
   assetCache = state.assets.slice();
   renderAssets();
@@ -214,16 +245,16 @@ window.__colorTimeline = function () {
     { id: 'L2', name: 'Color 1', visible: true, type: 'fill', dots: [] }
   ];
   state.activeLayerId = 'L2';
-  state.keyframes.push({ id: 'k1', layer: 'L1', time: 0, img: state.assets[3].img, name: 'ring.png', w: 512, h: 512 });
+  state.keyframes.push({ id: 'k1', layer: 'L1', time: 0, img: state.assets[3].img, name: 'doodle4.png', w: 512, h: 512 });
   var D = function (x, y, color, start) {
     var d = { id: 'D' + (++idSeq), x: x, y: y, color: color, threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom' };
     d.start = start; d.end = start + 1; d.dur = 1;
     return d;
   };
   state.layers[1].dots = [
-    D(0.5, 0.5, '#4f8fff', 0),
-    D(0.5, 0.5, '#c3ab7d', 0),
-    D(0.5, 0.5, '#8fb0a2', 0)
+    D(0.49, 0.51, '#4f8fff', 0),
+    D(0.49, 0.51, '#c3ab7d', 0),
+    D(0.49, 0.51, '#8fb0a2', 0)
   ];
   refreshDirty();
   renderAll();
@@ -235,16 +266,21 @@ window.__colorFill = function () {
     { id: 'L2', name: 'Color 1', visible: true, type: 'fill', dots: [] }
   ];
   state.activeLayerId = 'L2';
-  state.keyframes.push({ id: 'k1', layer: 'L1', time: 0, img: state.assets[3].img, name: 'ring.png', w: 512, h: 512 });
-  // Two dots, one per enclosed line-art shape: the left square fills blue,
-  // the right circle fills gold. Each region is closed, so the fills stay
-  // separate (a later dot only overpaints the same region).
-  var d1 = { id: 'D1', x: 0.29, y: 0.5, color: '#4f8fff', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 };
-  var d2 = { id: 'D2', x: 0.71, y: 0.5, color: '#c3ab7d', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 };
-  state.layers[1].dots = [d1, d2];
+  state.keyframes.push({ id: 'k1', layer: 'L1', time: 0, img: state.assets[3].img, name: 'doodle4.png', w: 512, h: 512 });
+  // doodle4's interior is one closed region (floodFillMask-verified): a single
+  // dot inside it fills it. The old ring art had two shapes; doodle5's loop
+  // has a gap, so it can spill — stick to the verified region.
+  var d1 = { id: 'D1', x: 0.49, y: 0.51, color: '#4f8fff', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 };
+  state.layers[1].dots = [d1];
   refreshDirty();
   renderAll();
   renderPreview();
+};
+// Right-panel sections default to the collapsed class in the HTML; open the
+// one a shot is trying to showcase the way a user would (clicking its title).
+window.__openPanel = function (id) {
+  var s = document.getElementById(id);
+  if (s) s.classList.remove('collapsed');
 };
 `;
 
@@ -252,7 +288,7 @@ module.exports = { ART };
 
 // shots
 async function setupAndWait(fn) {
-  await pageEval('(function(){' + ART + fn + '})()');
+  await pageEval('__doodles.then(function(){' + ART + fn + '})');
   // warm the image cache so the preview renders synchronously
   await pageEval(`(function(){
     var srcs = [];
@@ -342,8 +378,8 @@ async function main() {
   const tlRegion = { x: 0, y: R.timelineCol.y, w: VIEW_W, h: VIEW_H - R.timelineCol.y };
   const centerRegion = { x: R.leftCol.x + R.leftCol.w + 6, y: 52, w: R.rightCol.x - (R.leftCol.x + R.leftCol.w + 6), h: R.timelineCol.y - 52 };
 
-  // 1. full window, hero project
-  await setupAndWait('__hero(); state.playhead = 0.5; __fabricate(); renderPlayhead();');
+  // 1. full window, hero project (keyframe selected, its panel open)
+  await setupAndWait('__hero(); state.playhead = 0.5; __fabricate(); renderPlayhead(); selectKeyframe("k1"); __openPanel("kfSection");');
   await capture('win.png', R.full);
 
   // 2. assets panel
@@ -364,33 +400,33 @@ async function main() {
   await capture('dotstack.png', tlRegion);
 
   // 6. keyframe selected (docs selectionPanel)
-  await setupAndWait('__hero(); selectKeyframe("k1"); renderAll();');
+  await setupAndWait('__hero(); selectKeyframe("k1"); __openPanel("kfSection"); renderAll();');
   await capture('selection.png', { x: R.rightCol.x, y: 52, w: VIEW_W - R.rightCol.x, h: R.timelineCol.y - 52 });
 
   // 7. timeline with selected keyframe chip (docs kfChip)
-  await setupAndWait('__hero(); selectKeyframe("k1"); state.playhead = 0; renderPlayhead();');
+  await setupAndWait('__hero(); selectKeyframe("k1"); __openPanel("kfSection"); state.playhead = 0; renderPlayhead();');
   await capture('kfchip.png', tlRegion);
 
   // 8. gap selected (docs gapInbetween)
-  await setupAndWait('__hero(); state.selectedGapId = allGaps().filter(function(g){return g.layer==="L1";})[0].id; state.playhead = 0.3; renderAll(); renderPlayhead();');
+  await setupAndWait('__hero(); state.selectedGapId = allGaps().filter(function(g){return g.layer==="L1";})[0].id; __openPanel("gapPanel"); state.playhead = 0.3; renderAll(); renderPlayhead();');
   await capture('gap.png', tlRegion);
 
   // 9. squash (docs squash) + real generation
-  await setupAndWait('__hero();');
+  await setupAndWait('__hero(); __openPanel("gapPanel");');
   await genSquash(false);
   await pageEval('(function(){ renderSelectedPanel(); renderLane(); })()');
   await wait(200);
   await capture('squash.png', rightRegion);
 
   // 10. motion blur (home blur + docs motionBlur)
-  await setupAndWait('__hero();');
+  await setupAndWait('__hero(); __openPanel("gapPanel");');
   await genSquash(true);
   await pageEval('(function(){ renderSelectedPanel(); renderLane(); })()');
   await wait(200);
   await capture('blur.png', rightRegion);
 
   // 11. color fill (home fill + docs colorFill)
-  await setupAndWait('__colorFill(); state.activeLayerId = "L2"; renderPreview();');
+  await setupAndWait('__colorFill(); state.activeLayerId = "L2"; __openPanel("fillHint"); renderPreview();');
   await capture('colorfill.png', R.full);
 
   // 12. onion skinning (home onion + docs onion)
@@ -408,7 +444,7 @@ async function main() {
   await capture('onion.png', onionUnion);
 
   // 13. blend mode select (docs blend)
-  await setupAndWait('__hero(); selectKeyframe("k1"); state.selectedId = "k1"; renderAll();');
+  await setupAndWait('__hero(); selectKeyframe("k1"); __openPanel("kfSection"); state.selectedId = "k1"; renderAll();');
   await capture('blend.png', { x: R.rightCol.x, y: 52, w: VIEW_W - R.rightCol.x, h: R.timelineCol.y - 52 });
 
   // 14. export menu (home export + docs exportMenu)

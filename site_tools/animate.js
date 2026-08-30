@@ -221,29 +221,21 @@ window.__anims.fill = {
     var p = i / (n - 1);
     var cv = document.getElementById('previewCanvas');
     var r = cv.getBoundingClientRect();
-    var d1 = { nx: 0.29, ny: 0.5 }, d2 = { nx: 0.71, ny: 0.5 };
+    // doodle4's interior is one closed region: a single click inside it.
+    var d1 = { nx: 0.49, ny: 0.51 };
     var c1 = [r.left + d1.nx * r.width, r.top + d1.ny * r.height];
-    var c2 = [r.left + d2.nx * r.width, r.top + d2.ny * r.height];
     var pts = [
       [c1[0], c1[1], 0.00, false],
       [c1[0], c1[1], 0.24, false],
       [c1[0], c1[1], 0.30, true],
       [c1[0], c1[1], 0.34, false],
-      [c2[0], c2[1], 0.60, false],
-      [c2[0], c2[1], 0.66, true],
-      [c2[0], c2[1], 0.70, false],
-      [c2[0], c2[1] + 24, 0.9, false]
+      [c1[0], c1[1] + 24, 0.9, false]
     ];
     var c = __tween(pts, p);
     __cursor(c[0], c[1], c[2]);
     if (p >= 0.30 && !window.__fill1) {
       window.__fill1 = true;
-      state.layers[1].dots.push({ id: 'D1', x: d1.nx, y: d1.ny, color: '#4f8fff', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 });
-      refreshDirty(); renderAll(); renderPreview();
-    }
-    if (p >= 0.66 && !window.__fill2) {
-      window.__fill2 = true;
-      state.layers[1].dots.push({ id: 'D2', x: d2.nx, y: d2.ny, color: '#c3ab7d', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 });
+      state.layers[1].dots.push({ id: 'D1', x: 0.49, y: 0.51, color: '#4f8fff', threshold: 0.5, grow: 1, gradOn: false, gradColor: '#ffffff', gradHeight: 24, gradDir: 'bottom', start: 0, end: 1, dur: 1 });
       refreshDirty(); renderAll(); renderPreview();
     }
   }
@@ -428,7 +420,7 @@ async function main() {
     const n = FRAMES[name];
     // setup (and clear leftover cursor state)
     await pageEval('(function(){ window.__animWaitGen = false; window.__animSetupGen = false; })()');
-    await pageEval('__anims.' + name + '.setup();');
+    await pageEval('__doodles.then(function(){ __anims.' + name + '.setup(); });');
     await wait(250); // let the scene settle before frame 0
 
     // The blur setup generates the unblurred gap up front; wait for it so the
