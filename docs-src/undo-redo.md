@@ -19,7 +19,7 @@ The transport at the bottom of the timeline has Undo and Redo buttons. Everythin
 
 ## In the paint tool {#paint}
 
-The paint tool keeps its own history, separate from the timeline's. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes your last stroke or tool action; <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Y</kbd> redoes it. Each time you open the tool it starts fresh, so there is no undoing yesterday's strokes. Plan accordingly.
+The paint tool keeps its own history, separate from the timeline's. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes your last stroke or tool action; <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Y</kbd> redoes it. Each time you open the tool it starts fresh, so there is no undoing yesterday's strokes.
 
 ## Slider edits collapse {#coalescing}
 
