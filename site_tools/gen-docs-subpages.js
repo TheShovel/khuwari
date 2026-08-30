@@ -141,14 +141,20 @@ const FIG = {
   <svg viewBox="0 0 720 190" role="img" aria-label="Keyboard keys: space, left arrow, right arrow, delete" class="fig-border">
     <g class="fig-anim fig-tap">
       <rect x="60" y="50" width="220" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-      <text x="170" y="88" font-size="17" fill="#e6e9ee" text-anchor="middle">Space</text>
+      <text class="fig-key" x="170" y="88" font-size="17" fill="#e6e9ee" text-anchor="middle">Space</text>
     </g>
     <rect x="320" y="50" width="60" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-    <path d="M340 78 l14 -13 v9 h26 v8 h-26 v9 z" fill="#e6e9ee"/>
+    <g transform="translate(332 62) scale(1.5)" fill="none" stroke="#e6e9ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"/>
+      <path d="m12 19-7-7 7-7"/>
+    </g>
     <rect x="400" y="50" width="60" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-    <path d="M440 78 l-14 -13 v9 h-26 v8 h26 v9 z" fill="#e6e9ee"/>
+    <g transform="translate(412 62) scale(1.5)" fill="none" stroke="#e6e9ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14"/>
+      <path d="m12 5 7 7-7 7"/>
+    </g>
     <rect x="500" y="50" width="150" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-    <text x="575" y="88" font-size="17" fill="#e6e9ee" text-anchor="middle">Del</text>
+    <text class="fig-key" x="575" y="88" font-size="17" fill="#e6e9ee" text-anchor="middle">Del</text>
     <text x="360" y="150" font-size="15" fill="#98a1ad" text-anchor="middle">space plays, arrows step, delete removes</text>
   </svg>
   <figcaption>The shortcuts are easy to reach while you work.</figcaption>
@@ -172,27 +178,31 @@ const FIG = {
 <figure class="doc-fig">
   <svg viewBox="0 0 720 200" role="img" aria-label="The undo and redo buttons and the Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y shortcuts" class="fig-border">
     <rect x="40" y="24" width="150" height="44" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-    <path d="M72 46 l-12-12 12-12" fill="none" stroke="#e6e9ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M60 34 h10 a8 8 0 0 1 0 24 h-10" fill="none" stroke="#e6e9ee" stroke-width="3" stroke-linecap="round"/>
+    <g transform="translate(60.6 32.2) scale(1.2)" fill="none" stroke="#e6e9ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 14L4 9l5-5"/>
+      <path d="M4 9h11a5 5 0 0 1 0 10h-1"/>
+    </g>
     <text x="118" y="51" font-size="15" fill="#e6e9ee">Undo</text>
     <rect x="210" y="24" width="150" height="44" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/>
-    <path d="M242 34 l12 12-12 12" fill="none" stroke="#e6e9ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M260 34 h-10 a8 8 0 0 0 0 24 h10" fill="none" stroke="#e6e9ee" stroke-width="3" stroke-linecap="round"/>
-    <text x="288" y="51" font-size="15" fill="#e6e9ee">Redo</text>
-    <g font-family="Helvetica, Arial, sans-serif">
-      <rect x="46" y="98" width="62" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="77" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
-      <text x="116" y="126" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
-      <rect x="128" y="98" width="42" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="149" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Z</text>
-      <rect x="190" y="98" width="62" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="221" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
-      <text x="260" y="126" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
-      <rect x="272" y="98" width="72" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="308" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Shift</text>
-      <text x="352" y="126" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
-      <rect x="364" y="98" width="42" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="385" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Z</text>
-      <rect x="426" y="98" width="62" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="457" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
-      <text x="496" y="126" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
-      <rect x="508" y="98" width="42" height="46" rx="9" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="529" y="126" font-size="14" fill="#e6e9ee" text-anchor="middle">Y</text>
+    <g transform="translate(222.6 32.2) scale(1.2)" fill="none" stroke="#e6e9ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 14l5-5-5-5"/>
+      <path d="M20 9H9a5 5 0 0 0 0 10h1"/>
     </g>
-    <text x="46" y="176" font-size="14" fill="#98a1ad">Undo and redo work in the timeline and in the paint tool.</text>
+    <text x="288" y="51" font-size="15" fill="#e6e9ee">Redo</text>
+    <g class="fig-key">
+      <rect x="46" y="98" width="62" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="77" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
+      <text x="116" y="133" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
+      <rect x="128" y="98" width="42" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="149" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Z</text>
+      <rect x="190" y="98" width="62" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="221" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
+      <text x="260" y="133" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
+      <rect x="272" y="98" width="72" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="308" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Shift</text>
+      <text x="352" y="133" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
+      <rect x="364" y="98" width="42" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="385" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Z</text>
+      <rect x="426" y="98" width="62" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="457" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Ctrl</text>
+      <text x="496" y="133" font-size="17" fill="#c3ab7d" text-anchor="middle">+</text>
+      <rect x="508" y="98" width="42" height="60" rx="10" fill="#2a3038" stroke="#39414d" stroke-width="2"/><text x="529" y="133" font-size="17" fill="#e6e9ee" text-anchor="middle">Y</text>
+    </g>
+    <text x="46" y="184" font-size="14" fill="#98a1ad">Undo and redo work in the timeline and in the paint tool.</text>
   </svg>
   <figcaption>Undo and redo are one keystroke away, in the timeline and in the paint tool.</figcaption>
 </figure>`,
