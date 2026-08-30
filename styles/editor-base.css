@@ -1,5 +1,9 @@
 /* Khuwari, smooth matte Nordic editor UI */
 
+/* The Pangolin handwriting face, so the start screen wordmark matches the
+   website's brand text (styles/site-base.css). */
+@import url('https://fonts.googleapis.com/css2?family=Pangolin&display=swap');
+
 :root {
   --bg: #1b1f25;          /* deep slate */
   --bg-elev: #22272e;     /* elevated surface */
@@ -329,9 +333,10 @@ body::after {
   min-width: 0;
 }
 .start-name {
+  font-family: "Pangolin", cursive;
   font-size: 52px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text);
   animation: rise-in 0.5s ease both;
 }
