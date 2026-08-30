@@ -263,15 +263,15 @@
   transform: rotate(0.15deg);
 }
 
-/* Inline Hackatime chart on the home page: same sketch-card frame as the docs
-   figures, with typography inherited from the site fonts (Pangolin headline
-   and labels, the mono stack for the numbers). */
+/* Hackatime chart on the home page (hackatime-categories.svg, the single
+   source for the stats): framed like the docs figures. The SVG carries its
+   own fonts, so the site classes below only handle the frame. */
 .fig-stats {
   max-width: 720px;
   margin: 28px auto 0;
   transform: rotate(-0.2deg);
 }
-.fig-stats svg {
+.fig-stats img {
   display: block;
   width: 100%;
   height: auto;
@@ -280,10 +280,6 @@
   background: #fdfbf0;
   box-shadow: 3px 3px 0 rgba(35,38,43,0.07);
 }
-.fig-stats .fs-title { font-family: var(--heading); font-weight: 700; fill: var(--ink); }
-.fig-stats .fs-label { font-weight: 600; fill: var(--ink); }
-.fig-stats .fs-value { font-family: var(--mono); fill: var(--muted); }
-.fig-stats .fs-note { fill: var(--muted); }
 .fig-stats figcaption {
   margin-top: 10px;
   font-size: 13.5px;

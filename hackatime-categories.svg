@@ -1,15 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300" role="img" aria-label="Khuwari development time by category: coding 75.2%, ai coding 19.8%, writing docs 4.2%, writing tests 0.8%">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300" role="img" aria-label="Khuwari development time by category: coding 76.0%, ai coding 19.0%, writing docs 4.2%, writing tests 0.8%">
 <rect x="1" y="1" width="718" height="298" rx="16" fill="#fdfbf0" stroke="#23262b" stroke-width="2.4"/>
 <text x="36" y="64" font-family="Pangolin, 'Comic Sans MS', 'Segoe Print', cursive" font-size="26" font-weight="700" fill="#23262b">Time on Khuwari, by category</text>
 <text x="36" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#23262b">Coding</text>
 <rect x="230" y="99" width="248" height="18" rx="6" fill="#4a6fa5"/>
-<text x="690" y="113" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">30h 56m · 75.2%</text>
+<text x="690" y="113" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">32h 31m · 76.0%</text>
 <text x="36" y="159" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#23262b">AI coding</text>
-<rect x="230" y="145" width="65" height="18" rx="6" fill="#c46b6b"/>
-<text x="690" y="159" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">8h 8m · 19.8%</text>
+<rect x="230" y="145" width="62" height="18" rx="6" fill="#c46b6b"/>
+<text x="690" y="159" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">8h 8m · 19.0%</text>
 <text x="36" y="205" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#23262b">Writing Docs</text>
 <rect x="230" y="191" width="14" height="18" rx="6" fill="#6e9b7f"/>
-<text x="690" y="205" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">1h 42m · 4.2%</text>
+<text x="690" y="205" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">1h 46m · 4.2%</text>
 <text x="36" y="251" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#23262b">Writing Tests</text>
 <rect x="230" y="237" width="14" height="18" rx="6" fill="#c49a5a"/>
 <text x="690" y="251" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="#6e7480">19m · 0.8%</text>
