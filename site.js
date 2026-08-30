@@ -95,6 +95,20 @@
         place(makeUnit(dd, sc), spot, rand(-24, 24), Math.random() < 0.3);
       }
     } else {
+      // Swap a unit to its next doodle while it is hidden: free the old spot,
+      // claim a new one, and swap in the next tint, mask and size.
+      function cycleUnit(unit, cur) {
+        var idx = placed.indexOf(cur.spot);
+        if (idx !== -1) placed.splice(idx, 1);
+        cur.doodle = DOODLES[(Math.random() * DOODLES.length) | 0];
+        cur.scale = rand(0.9, 1.4);
+        cur.spot = pickSpot(cur.doodle, cur.scale);
+        placed.push(cur.spot);
+        unit.className = 'd-unit ' + cur.doodle.c;
+        unit.style.setProperty('--doodle-src', 'url(\'' + doodleUrl(cur.doodle.src) + '\')');
+        unit.style.width = (cur.doodle.w * cur.scale / FIELD_W * 100).toFixed(2) + 'vw';
+        unit.style.height = (cur.doodle.h * cur.scale / FIELD_W * 100).toFixed(2) + 'vw';
+      }
       var unitCount = 7;
       for (var u = 0; u < unitCount; u++) {
         var d0 = DOODLES[u];
@@ -103,9 +117,25 @@
         placed.push(s0);
         var div = makeUnit(d0, s0scale);
         (async function run() {
-          var unit = div, doodle = d0, scale = s0scale, spot = s0;
+          var unit = div, cur = { doodle: d0, scale: s0scale, spot: s0 };
+          if (u < 4) {
+            // First paint: a few doodles are already drawn on the paper so the
+            // background is never empty while the rest stagger in. They hold,
+            // fade out, then fall through into the normal cycle.
+            place(unit, cur.spot, rand(-32, 32), Math.random() < 0.35);
+            unit.style.clipPath = 'polygon(0 0, 100% 0, 100% 100%, 0 100%)';
+            unit.style.opacity = 1;
+            await sleep(1400 + rand(600, 1600)); // hold like a settled doodle
+            unit.style.opacity = 0;
+            await sleep(600 + rand(0, 400));     // fade out, then drift off
+            cycleUnit(unit, cur);
+          } else {
+            // Self-phase: each doodle starts its cycle at a random offset, so
+            // the pool never moves as one.
+            await sleep(rand(0, 5500));
+          }
           for (;;) {
-            var tilt = rand(-28, 28);
+            var tilt = rand(-32, 32);
             var flip = Math.random() < 0.35;
             // Left/top land instantly; the transform glides the doodle into
             // place while it is hidden. The clip is reset to a zero-width
@@ -113,31 +143,22 @@
             // starts from a blank sheet.
             unit.style.animation = 'none';
             unit.style.clipPath = 'polygon(0 0, 0% 0, 0% 100%, 0 100%)';
-            place(unit, spot, tilt, flip);
+            place(unit, cur.spot, tilt, flip);
             unit.style.opacity = 0;
-            await sleep(1150);
+            var glide = 1050 + rand(0, 500);
+            await sleep(glide);
             unit.style.opacity = 1;
             void unit.offsetHeight; // reflow so the sweep animation retriggers
-            unit.style.animation = sweepName(doodle) + ' 1.1s cubic-bezier(0.33, 1, 0.36, 1) forwards';
-            await sleep(1000);    // the drawing draws itself in
+            var drawMs = 950 + rand(0, 500);
+            unit.style.animation = sweepName(cur.doodle) + ' ' + (drawMs / 1000).toFixed(2) + 's cubic-bezier(0.33, 1, 0.36, 1) forwards';
+            await sleep(drawMs);  // the drawing draws itself in
             // A slow tilt while it holds, like it is settling on the paper.
-            unit.style.transform = 'translate(-50%, -50%) rotate(' + (tilt + rand(4, 10)).toFixed(1) + 'deg) scale(' + (flip ? -1 : 1) + ', 1)';
-            await sleep(1300 + rand(1000, 1900));
+            // The nudge is random in sign so doodles do not all lean the same way.
+            unit.style.transform = 'translate(-50%, -50%) rotate(' + (tilt + rand(-10, 10)).toFixed(1) + 'deg) scale(' + (flip ? -1 : 1) + ', 1)';
+            await sleep(1000 + rand(900, 2200));
             unit.style.opacity = 0;
-            await sleep(600);
-            // Free the old spot, claim the next one while still hidden.
-            var idx = placed.indexOf(spot);
-            if (idx !== -1) placed.splice(idx, 1);
-            doodle = DOODLES[(Math.random() * DOODLES.length) | 0];
-            scale = rand(0.9, 1.4);
-            var next = pickSpot(doodle, scale);
-            placed.push(next);
-            spot = next;
-            // Swap in the next doodle's tint and size while hidden.
-            unit.className = 'd-unit ' + doodle.c;
-            unit.style.setProperty('--doodle-src', 'url(\'' + doodleUrl(doodle.src) + '\')');
-            unit.style.width = (doodle.w * scale / FIELD_W * 100).toFixed(2) + 'vw';
-            unit.style.height = (doodle.h * scale / FIELD_W * 100).toFixed(2) + 'vw';
+            await sleep(600 + rand(0, 400));
+            cycleUnit(unit, cur);
           }
         })();
       }

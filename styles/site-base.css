@@ -123,12 +123,14 @@ body::before {
   from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
   to   { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
 }
-.d-gold  { background-color: #c49a5a; }
-.d-blue  { background-color: #4a6fa5; }
-.d-sage  { background-color: #6e9b7f; }
-.d-red   { background-color: #c46b6b; }
-.d-ochre { background-color: #d6b07a; }
-.d-slate { background-color: #8b93a0; }
+/* Same specificity as the fallback above (.bg-doodles .d-unit), so the
+   palette classes actually win over it. */
+.bg-doodles .d-gold  { background-color: #c49a5a; }
+.bg-doodles .d-blue  { background-color: #4a6fa5; }
+.bg-doodles .d-sage  { background-color: #6e9b7f; }
+.bg-doodles .d-red   { background-color: #c46b6b; }
+.bg-doodles .d-ochre { background-color: #d6b07a; }
+.bg-doodles .d-slate { background-color: #8b93a0; }
 @media (prefers-reduced-motion: reduce) {
   .bg-doodles .d-unit { transition: none; opacity: 1; animation: none !important; }
 }

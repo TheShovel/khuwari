@@ -32,6 +32,15 @@ function loadPage(file) {
   return dom;
 }
 
+// CSS lives split across styles/; read every part concatenated.
+function readAllCss() {
+  return fs.readdirSync(path.join(SITE, 'styles'))
+    .filter((f) => f.endsWith('.css'))
+    .sort()
+    .map((f) => fs.readFileSync(path.join(SITE, 'styles', f), 'utf8'))
+    .join('\n');
+}
+
 function bootJS(dom, extraFiles) {
   const ctx = dom.getInternalVMContext();
   (extraFiles || []).forEach((f) => {
@@ -89,14 +98,6 @@ function bootJS(dom, extraFiles) {
       return r0 && typeof r0.classList.toggle === 'function';
     })());
     // Homepage image keeps no fade gradient (only the editor start screen has one).
-    // CSS lives split across styles/; the checks below read every part concatenated.
-    function readAllCss() {
-      return fs.readdirSync(path.join(SITE, 'styles'))
-        .filter((f) => f.endsWith('.css'))
-        .sort()
-        .map((f) => fs.readFileSync(path.join(SITE, 'styles', f), 'utf8'))
-        .join('\n');
-    }
     const rootCss = readAllCss();
     const editorCss = readAllCss();
     t('H10 homepage art has no fade gradient', rootCss.indexOf('.hero-art::after') === -1);
