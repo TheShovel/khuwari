@@ -89,8 +89,16 @@ function bootJS(dom, extraFiles) {
       return r0 && typeof r0.classList.toggle === 'function';
     })());
     // Homepage image keeps no fade gradient (only the editor start screen has one).
-    const rootCss = fs.readFileSync(path.join(SITE, 'site.css'), 'utf8');
-    const editorCss = fs.readFileSync(path.join(SITE, 'styles.css'), 'utf8');
+    // CSS lives split across styles/; the checks below read every part concatenated.
+    function readAllCss() {
+      return fs.readdirSync(path.join(SITE, 'styles'))
+        .filter((f) => f.endsWith('.css'))
+        .sort()
+        .map((f) => fs.readFileSync(path.join(SITE, 'styles', f), 'utf8'))
+        .join('\n');
+    }
+    const rootCss = readAllCss();
+    const editorCss = readAllCss();
     t('H10 homepage art has no fade gradient', rootCss.indexOf('.hero-art::after') === -1);
     t('H11 editor start screen keeps its gradient', editorCss.indexOf('.start-art::after') !== -1);
   }
@@ -178,7 +186,7 @@ function bootJS(dom, extraFiles) {
     // Figures: several pages should carry real screenshots of the editor.
     const figPages = slugs.filter((s) => loadPage('docs/' + s + '.html').window.document.querySelectorAll('.doc-fig').length > 0);
     t('P9 figures appear on multiple pages (' + figPages.length + ' pages)', figPages.length >= 5);
-    const css = fs.readFileSync(path.join(SITE, 'site.css'), 'utf8');
+    const css = readAllCss();
     t('P10 screenshot figures styled in CSS', css.indexOf('.fig-img') !== -1 && css.indexOf('border-radius') !== -1);
     const shotPages = slugs.filter((s) => loadPage('docs/' + s + '.html').window.document.querySelectorAll('.doc-fig img.fig-img').length > 0);
     t('P11 screenshot figures present (' + shotPages.length + ' pages)', shotPages.length >= 4);

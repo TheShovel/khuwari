@@ -1,0 +1,10 @@
+/* Khuwari website styles — entry file. The parts below are imported in
+ * cascade order; edit the parts, not this file.
+ *   site-base  variables, body, grain, doodles, nav, buttons, layout
+ *   site-home  hero, features, steps, values, privacy band
+ *   site-docs  docs hub, subpages, figures, search
+ *   site-misc  credits, footer, animations, responsive */
+@import url('site-base.css');
+@import url('site-home.css');
+@import url('site-docs.css');
+@import url('site-misc.css');

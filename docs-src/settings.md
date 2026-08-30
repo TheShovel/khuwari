@@ -1,7 +1,7 @@
 ---
 slug: settings
 title: Settings
-blurb: FPS, snapping, aspect ratios and the working size, all from one menu.
+blurb: FPS, snapping, aspect ratios, working size and the colour scheme, all from one menu.
 ---
 
 ## FPS {#fps}
@@ -21,3 +21,7 @@ Follow the first frame, pick a preset such as 16:9 or 1:1, or set a custom size 
 The long edge of the working canvas, from 512 pixels down to 320. Smaller is noticeably faster to generate, and exports still come out at full resolution.
 
 [[fig:settingsMenu]]
+
+## Theme {#theme}
+
+Pick the editor's colour scheme: dark, light, lavender, green tea or paper. Your choice is saved in your browser, so it stays even when you switch projects.

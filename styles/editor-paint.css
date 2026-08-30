@@ -1,0 +1,282 @@
+/* Built-in paint tool
+   A Krita-style workspace: flat toolbar on top, tool-options docker on the
+   left, the canvas in the centre, docker panels on the right and an action /
+   onion-skin status bar at the bottom. Reuses the editor's design tokens. */
+.paint-overlay { position: fixed; inset: 0; z-index: 50; background: var(--bg);
+  display: flex; align-items: stretch; justify-content: stretch; padding: 0; }
+.paint-overlay.hidden { display: none; }
+.paint-box { width: 100%; height: 100%;
+  background: var(--bg-elev); border: none;
+  border-radius: 0; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: none; }
+
+/* Top toolbar: tool buttons, brush name, quick sliders, colour, close. */
+.paint-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  background: var(--bg-elev2); border-bottom: 1px solid var(--border); }
+/* Tool buttons live in the left panel above Tool options (Krita-style). */
+.paint-tools { display: grid; grid-template-columns: repeat(5, 26px); gap: 3px;
+  margin-bottom: 9px; }
+.paint-tool { display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; border-radius: 6px;
+  background: transparent; border: 1px solid transparent; color: var(--muted);
+  cursor: pointer; }
+.paint-tool svg { width: 16px; height: 16px; }
+.paint-tool:hover { background: var(--bg-elev3); color: var(--text); }
+.paint-tool.active { background: var(--bg-elev3); border-color: var(--accent); color: var(--text); }
+.paint-toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.paint-brush-name { font-size: 12px; font-weight: 600; color: var(--text);
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paint-qfield { display: flex; flex-direction: column; gap: 2px; font-size: 11px;
+  color: var(--muted); min-width: 118px; }
+.paint-qfield .paint-qval { color: var(--text); }
+.paint-qfield .slider { height: 14px; }
+/* Krita-style slider + spinbox row. */
+.paint-qrow { display: flex; align-items: center; gap: 6px; }
+.paint-qrow .slider { flex: 1; min-width: 0; }
+.paint-num { width: 44px; box-sizing: border-box; flex: 0 0 auto;
+  background: var(--bg-elev2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 5px; font-size: 11px; padding: 2px 4px; text-align: center; }
+.paint-num:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Krita-style size / opacity control: a slider with the value drawn in a pill
+   centred over the groove. Double-clicking the slider swaps the pill for a
+   text field you can type into (see wirePaintKSlider). */
+.paint-kfield { display: flex; flex-direction: column; gap: 2px; font-size: 11px;
+  color: var(--muted); min-width: 132px; flex: 0 0 auto; }
+.paint-kname { font-size: 11px; color: var(--muted); }
+.paint-kslider { position: relative; display: block; }
+.paint-kslider-range { height: 18px; }
+.paint-kslider-val { position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%); pointer-events: none; z-index: 1;
+  font-size: 10.5px; line-height: 1; padding: 3px 9px; font-weight: 600;
+  color: var(--text); background: var(--bg-elev2); border: 1px solid var(--border);
+  border-radius: 8px; white-space: nowrap; }
+.paint-kslider-text { position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%); z-index: 2; width: 66px; box-sizing: border-box;
+  background: var(--bg-elev2); color: var(--text); border: 1px solid var(--accent);
+  border-radius: 8px; font-size: 11px; padding: 2px 6px; text-align: center; }
+.paint-kslider-text[hidden] { display: none; }
+.paint-kslider-text:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.paint-color-wrap { display: block; width: 26px; height: 26px; flex: 0 0 auto;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); cursor: default; }
+.paint-close { margin-left: 2px; padding: 8px 18px; font-weight: 700; gap: 8px;
+  font-size: 13px; box-shadow: 0 1px 8px rgba(var(--accent-rgb), 0.35); }
+.paint-close svg { width: 17px; height: 17px; }
+
+/* Main workspace row. */
+.paint-body { display: flex; min-height: 0; flex: 1; }
+
+/* Docker panels: title strip + body, like Krita's dockers. */
+.paint-docker { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.docker-title { display: flex; align-items: center; gap: 6px; font-size: 10.5px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted); margin-bottom: 6px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border); }
+.paint-left { width: 190px; flex: 0 0 auto; border-right: 1px solid var(--border);
+  overflow-y: auto; background: var(--bg-elev); }
+.paint-dockers { width: 250px; flex: 0 0 auto; border-left: 1px solid var(--border);
+  overflow-y: auto; background: var(--bg-elev); }
+
+/* Universal collapsible panels (used by the paint editor docker AND the right
+   panel of the main editor): a `.collapsible` container whose first child is a
+   `.collapsible-title` button, with the foldable content wrapped in
+   `.collapsible-body > .collapsible-inner`. Clicking the title folds/unfolds
+   with a smooth grid-template-rows animation to the exact content height. */
+.collapsible-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.collapsible.collapsed .collapsible-body { grid-template-rows: 0fr; }
+.collapsible-inner { min-height: 0; overflow: hidden; }
+.collapsible-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; margin: 0; padding: 0 0 4px; border: none; background: none;
+  font: inherit; text-align: left; cursor: pointer; user-select: none;
+}
+.collapsible-title:hover { color: var(--text); }
+.collapsible-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.collapsible-chev { flex: 0 0 auto; width: 12px; height: 12px; opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.15s ease; }
+.collapsible-title:hover .collapsible-chev { opacity: 1; }
+.collapsible.collapsed .collapsible-chev { transform: rotate(-90deg); }
+/* Resizer handles between the paint panels (drag to resize, double-click reset). */
+.paint-resizer { flex: 0 0 auto; width: 5px; cursor: col-resize; background: transparent;
+  touch-action: none; transition: background 0.16s ease; }
+.paint-resizer:hover, .paint-resizer.dragging { background: rgba(var(--accent-rgb), 0.18); }
+
+/* Color wheel (Krita-style): SV square + hue slider, capped + centred.
+   Position math in the JS reads getBoundingClientRect() at runtime, so the
+   fixed display size is safe. */
+.paint-colorwheel { display: flex; justify-content: center; align-items: flex-start;
+  gap: 8px; margin-bottom: 8px; }
+.paint-cw-sv-wrap { position: relative; flex: 0 0 auto; width: 150px;
+  aspect-ratio: 1 / 1; }
+.paint-cw-sv { display: block; width: 100%; height: 100%; border-radius: 6px;
+  border: 1px solid var(--border); cursor: crosshair; touch-action: none; }
+.paint-cw-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5);
+  pointer-events: none; transform: translate(-50%, -50%); }
+.paint-cw-hue-wrap { position: relative; width: 18px; height: 150px; flex: 0 0 auto; }
+.paint-cw-hue { display: block; width: 100%; height: 100%; border-radius: 6px;
+  border: 1px solid var(--border); cursor: pointer; touch-action: none; }
+.paint-cw-hue-marker { position: absolute; left: -3px; right: -3px; height: 8px;
+  border: 2px solid #fff; border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.6); pointer-events: none; }
+.paint-cw-hex { display: flex; justify-content: center; }
+.paint-cw-hex .paint-field { flex: 0 0 auto; width: 176px; }
+.paint-cw-hex .text-input { font-family: var(--mono); text-align: center; }
+
+/* Recent-colour swatch row (paint history, newest first). */
+.paint-cw-recent { margin-top: 9px; }
+.paint-cw-recent-label { font-size: 11px; color: var(--muted); margin: 0 0 5px; text-align: center; }
+.paint-recent-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+.paint-recent-swatch {
+  width: 18px; height: 18px; padding: 0;
+  border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.paint-recent-swatch:hover { transform: scale(1.18); border-color: #fff; }
+
+/* Tool-options fields. */
+.paint-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px;
+  color: var(--muted); margin-bottom: 9px; }
+.paint-field .mono { color: var(--text); }
+.paint-field select { background: var(--bg-elev2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 7px;
+  font-size: 12px; }
+.paint-check { display: flex; align-items: center; gap: 8px; font-size: 12px;
+  color: var(--text); margin-bottom: 9px; cursor: pointer; }
+.paint-left .slider { height: 14px; }
+
+/* Centre canvas. */
+.paint-center { flex: 1; min-width: 0; display: flex; align-items: center;
+  justify-content: center; padding: 12px; background: var(--bg); }
+.paint-canvas-wrap { width: 100%; height: 100%; display: flex; align-items: center;
+  justify-content: center;
+  /* Light-grey checkerboard so dark paint is easy to see while whites still
+     read as white (Krita/Photoshop-style). The dark tile was the app's
+     --bg-elev2 (#2a3038), which swallowed dark colours. The wrap's own
+     background-color is the darker of the two tiles. */
+  background-color: var(--checker-bg);
+  background-image: linear-gradient(45deg, var(--checker) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker) 75%);
+  background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  border-radius: 6px; overflow: hidden; }
+.paint-canvas-wrap .paint-stage { border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+#paintCanvas { background: transparent; touch-action: none; border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4); cursor: crosshair; }
+
+/* Brush palette: Krita-style grid of square previews on white, no labels. */
+.paint-brush-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 4px; margin-bottom: 8px; max-height: 240px; overflow-y: auto; }
+.paint-brush { display: flex; align-items: center; justify-content: center;
+  width: 100%; aspect-ratio: 1 / 1; padding: 3px; border-radius: 5px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--text); cursor: pointer; }
+.paint-brush:hover { background: var(--bg-elev3); }
+.paint-brush.active { border-color: var(--accent); background: rgba(var(--accent-rgb),0.16); }
+.paint-brush-prev { width: 100%; height: 100%; border-radius: 3px;
+  overflow: hidden; background: #fff; display: flex; align-items: center;
+  justify-content: center; }
+.paint-brush-prev canvas { display: block; max-width: 100%; max-height: 100%; }
+.paint-brush-prev img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.paint-brush-count { margin-left: auto; font-size: 10px; font-weight: 600;
+  color: var(--accent); background: rgba(var(--accent-rgb),0.12);
+  border: 1px solid rgba(var(--accent-rgb),0.25); padding: 1px 6px; border-radius: 999px; }
+
+/* Layer list (Krita-style: thumbnail + eye + name, icon toolbar, props). */
+.paint-layer-list { display: flex; flex-direction: column; gap: 2px;
+  max-height: 200px; overflow-y: auto; margin-bottom: 5px; }
+.paint-layer { display: flex; align-items: center; gap: 6px; padding: 3px 4px;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+.paint-layer:hover { background: var(--bg-elev3); }
+.paint-layer.active { border-color: var(--accent); background: rgba(var(--accent-rgb),0.16); }
+.paint-layer-thumb { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 4px;
+  border: 1px solid var(--border);
+  background: repeating-conic-gradient(var(--checker) 0% 25%, var(--checker-bg) 0% 50%) 0 0 / 8px 8px; }
+.paint-layer-name { flex: 1; min-width: 0; font-size: 12px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paint-layer-name-input { flex: 1; min-width: 0; background: var(--bg-elev3);
+  color: var(--text); border: 1px solid var(--accent); border-radius: 4px;
+  font-size: 12px; padding: 1px 4px; }
+.paint-layer-eye { display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex: 0 0 auto; padding: 0; border-radius: 6px;
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  cursor: pointer; }
+.paint-layer-eye:hover { background: var(--bg-elev3); color: var(--text); }
+.paint-layer-eye.off { color: var(--bg-elev3); }
+.paint-layer-eye.off:hover { color: var(--muted); }
+/* Docker toolbar: flat icon buttons consistent with the tools column. */
+.paint-layer-toolbar { display: flex; align-items: center; gap: 2px;
+  padding: 5px 0 7px; border-top: 1px solid var(--border); }
+.paint-icon-btn { display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; border-radius: 6px;
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  cursor: pointer; }
+.paint-icon-btn:hover:not(:disabled) { background: var(--bg-elev3); color: var(--text); }
+.paint-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.paint-icon-btn.danger:hover:not(:disabled) { color: var(--danger); }
+.paint-layer-tb-sep { width: 1px; height: 18px; flex: 0 0 auto;
+  background: var(--border); margin: 0 6px; }
+/* Active-layer opacity + blend props (opacity is slider + percent spinbox,
+   matching the top-toolbar brush controls). */
+.paint-layer-props { display: flex; flex-direction: column; gap: 6px; }
+.paint-layer-prop { display: flex; align-items: center; gap: 8px; font-size: 11px;
+  color: var(--muted); }
+.paint-layer-oprow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.paint-layer-oprow .slider { flex: 1; min-width: 0; height: 14px; }
+.paint-layer-oprow .paint-num { width: 40px; }
+.paint-layer-prop .paint-qval { width: 34px; text-align: right; color: var(--text); }
+.paint-layer-blend { flex: 1; min-width: 0; background: var(--bg-elev2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; font-size: 11px;
+  padding: 3px 5px; cursor: pointer; }
+
+/* Resize dialog inputs. */
+.text-input { width: 100%; box-sizing: border-box; background: var(--bg-elev2);
+  border: 1px solid var(--border); color: inherit; border-radius: 6px;
+  padding: 6px 8px; font-size: 12px; }
+
+/* Bottom status bar: actions + onion skin. */
+.paint-statusbar { display: flex; align-items: center; gap: 10px; padding: 5px 10px;
+  background: var(--bg-elev2); border-top: 1px solid var(--border); }
+.paint-actions { display: flex; gap: 6px; }
+.btn.small { padding: 5px 9px; font-size: 12px; }
+.paint-view { display: flex; align-items: center; gap: 5px; }
+.paint-view .paint-qval { font-size: 12px; min-width: 40px; text-align: center; }
+/* Icon-only zoom controls at the right of the status bar. */
+.paint-view-btn { display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; border-radius: 6px; }
+.paint-view-btn svg { width: 13px; height: 13px; }
+/* Frame scrubber: moves the timeline playhead so onion ghosts follow it. */
+.paint-frame-field { min-width: 150px; }
+.paint-frame-field .paint-qrow { gap: 6px; }
+.paint-frame-field .paint-qrow .slider { flex: 1 1 auto; min-width: 70px; }
+.paint-frame-field .paint-qval { min-width: 46px; text-align: center; color: var(--text); }
+.paint-banner { font-size: 12px; color: var(--gold); background: rgba(255,180,40,0.12);
+  padding: 3px 8px; border-radius: 6px; }
+.paint-banner.hidden { display: none; }
+
+/* Extra tools: stage overlay, tool option panels, dialogs, menus. */
+.paint-stage { position: relative; }
+.paint-overlay-cv { position: absolute; inset: 0; pointer-events: none; }
+#paintCanvas { position: relative; }
+.paint-toolopts { display: block; }
+.paint-toolopts.hidden { display: none; }
+.paint-btnrow { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
+.paint-hint { font-size: 11px; color: var(--muted); line-height: 1.5;
+  margin: 0 0 9px; }
+.paint-dialog { position: fixed; inset: 0; z-index: 60; display: flex;
+  align-items: center; justify-content: center; background: rgba(0,0,0,0.45); }
+.paint-dialog.hidden { display: none; }
+.paint-dialog-box { width: 320px; background: var(--bg-elev2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+.paint-dialog-row { display: flex; gap: 10px; }
+.paint-dialog-row .paint-field { flex: 1; min-width: 0; }
+.menu-sep { height: 1px; background: var(--border); margin: 5px 8px; }

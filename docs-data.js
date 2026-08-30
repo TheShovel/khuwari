@@ -123,6 +123,9 @@ window.KHUWARI_DOCS = [
   { cat: 'Settings', slug: 'settings', id: 'work-size', title: 'Working size',
     text: 'The long edge of the working canvas, from 512 pixels down to 320. Smaller is noticeably faster to generate, and exports still render at full resolution.',
     url: 'docs/settings.html' },
+  { cat: 'Settings', slug: 'settings', id: 'theme', title: 'Theme',
+    text: 'Pick the editor colour scheme: dark, light, lavender, green tea or paper. The choice is saved in your browser and stays even when you switch projects.',
+    url: 'docs/settings.html' },
 
   // keyboard shortcuts
   { cat: 'Keyboard shortcuts', slug: 'shortcuts', id: 'playback', title: 'Playback',

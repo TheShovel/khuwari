@@ -67,7 +67,7 @@ const FOOTER = `<footer class="footer">
 
 // Shared SVG figure library. Every figure mirrors the real app UI (same
 // palette and layout) so it reads like a screenshot; animated ones use the
-// .fig-* CSS animations in site.css and pause under prefers-reduced-motion.
+// .fig-* CSS animations in styles/site.css and pause under prefers-reduced-motion.
 // Figures are authored at a 720-unit viewBox with fonts sized to match their
 // boxes (no post-scaling), so text never overflows or clips.
 // Figure library. UI figures are real screenshots of the editor (shots/);
@@ -466,7 +466,7 @@ function page(cat, prev, next) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${cat.title} · Khuwari</title>
 <meta name="description" content="${cat.blurb}">
-<link rel="stylesheet" href="../site.css">
+<link rel="stylesheet" href="../styles/site.css">
 </head>
 <body>
 

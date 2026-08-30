@@ -1,0 +1,10 @@
+/* Khuwari editor styles — entry file. The parts below are imported in
+ * cascade order; edit the parts, not this file.
+ *   editor-base    palette + themes, start screen, buttons, fields, menus
+ *   editor-layout  preview, panels, timeline, chips, camera and audio lanes
+ *   editor-mobile  responsive layout and touch affordances
+ *   editor-paint   the Krita-style paint workspace */
+@import url('editor-base.css');
+@import url('editor-layout.css');
+@import url('editor-mobile.css');
+@import url('editor-paint.css');

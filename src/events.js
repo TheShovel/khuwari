@@ -277,6 +277,7 @@
       scheduleGenerate();
     });
     el.snapInput.addEventListener('change', function () { state.snap = el.snapInput.checked; });
+    el.themeInput.addEventListener('change', function () { applyTheme(el.themeInput.value); });
     // Aspect ratio + custom dimensions share one path: recompute the working
     // size, re-render, persist, and regenerate anything the size invalidates.
     function changeSizeSetting() {
@@ -616,7 +617,7 @@
     }, { passive: false });
 
     // Instant hover tooltip for long-gap warnings. The whole red gap is
-    // hoverable (see .gap-overlay.warn in styles.css); a fixed-position tip
+    // hoverable (see .gap-overlay.warn in styles/editor-layout.css); a fixed-position tip
     // follows the cursor so it isn't clipped by the lane and shows immediately.
     var gapTip = document.createElement('div');
     gapTip.className = 'gap-tip hidden';

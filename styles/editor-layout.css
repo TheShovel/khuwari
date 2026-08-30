@@ -1,0 +1,1191 @@
+/* Keyframe panel column: mirrored to the right of the preview. */
+.side-col.right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+/* Divider between the preview and a side panel: drag to resize the panel
+   width, double-click to restore the default. */
+.side-resizer {
+  flex: 0 0 auto;
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  touch-action: none;
+  transition: background 0.16s ease;
+}
+.side-resizer:hover, .side-resizer.dragging { background: rgba(var(--accent-rgb), 0.18); }
+body.resizing-side { cursor: col-resize; user-select: none; }
+/* Gap controls (right panel, shown when a gap is selected on the timeline). */
+.gap-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: panel-in 0.2s ease;
+}
+@keyframes panel-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.asset-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-bottom: 8px;
+}
+.asset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid rgba(var(--border-soft-rgb), 0.55);
+  border-radius: 9px;
+  padding: 6px;
+  background: var(--bg-elev2);
+  cursor: grab;
+  min-width: 0;
+  touch-action: none;
+  user-select: none;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s cubic-bezier(0.34,1.2,0.64,1), box-shadow 0.16s ease;
+}
+.asset:hover { border-color: var(--border-strong); background: var(--bg-elev3); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.22); }
+.asset:active { cursor: grabbing; }
+.asset-del {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+}
+.asset:hover .asset-del, .asset-del:focus-visible { display: flex; }
+.asset-del:hover { background: var(--danger); color: var(--on-accent); }
+.asset-edit {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--text);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+}
+.asset:hover .asset-edit, .asset-edit:focus-visible { display: flex; }
+.asset-edit:hover { background: var(--accent); color: var(--on-accent); }
+.asset img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  /* Same light-grey checkerboard as the paint editor canvas area, so
+     transparent previews look like they do on the painting canvas. */
+  background-color: var(--checker-bg);
+  background-image: linear-gradient(45deg, var(--checker) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  border-radius: 4px;
+  display: block;
+  pointer-events: none;  /* the tile is the drag source, not the img */
+}
+.asset-name {
+  font-size: 9.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.asset-empty {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Ghost that follows the cursor while an asset tile is dragged, plus the
+   forced grabbing cursor for the whole drag (custom pointer drag, so the
+   browser's no-drop X never appears). JS drives the transform (position
+   spring + velocity tilt), so the card visibly swings while dragged. */
+.asset-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.9);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(var(--accent-rgb), 0.12);
+  background: var(--bg-deep);
+  pointer-events: none;
+  z-index: 1000;
+  display: flex;
+  will-change: transform;
+}
+.asset-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 7px;
+}
+body.dragging-asset,
+body.dragging-asset * { cursor: grabbing !important; }
+.side-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+  opacity: 0.9;
+}
+/* Collapsible right-panel categories use the global .collapsible mechanism
+   (animation + chevron in the universal section below); no extra rules needed. */
+.kf-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--bg-elev2);
+  border: 1px solid rgba(var(--border-soft-rgb), 0.55);
+  border-radius: 10px;
+  padding: 10px;
+}
+.kf-card-thumb {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--gold-rgb), 0.5);
+  background: var(--bg-deep);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.kf-card-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.kf-card-meta { min-width: 0; }
+.kf-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kf-card-time { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+.kf-empty { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.side-col .field input { width: 100%; }
+/* Switch checkboxes stay compact even where field inputs go full width. */
+.side-col .field input[type="checkbox"] { width: 28px; height: 16px; flex: 0 0 auto; }
+.side-col .btn { width: 100%; text-align: center; }
+.side-col .menu-row .btn { width: auto; flex: 1; }
+
+/* Keyframe panel: consistent rhythm between the title, the preview card, the
+   time field and the actions. */
+#kfSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#kfSection .kf-card {
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+#kfSection .kf-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+#kfSection .kf-card-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+}
+#kfSection .kf-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+#kfSection .kf-card-name { font-size: 13px; font-weight: 650; }
+#kfSection .kf-card-time { font-size: 11px; margin-top: 0; }
+#kfSection .kf-empty {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 2px 0;
+}
+.kf-field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--bg-elev2);
+  border: 1px solid rgba(var(--border-soft-rgb), 0.5);
+  border-radius: 10px;
+}
+#kfSection .menu-row { gap: 8px; }
+#kfSection .menu-row .btn { padding: 8px 10px; }
+
+.squash-group:not(.hidden) { display: flex; flex-direction: column; }
+.squash-group { gap: 10px; }
+.squash-group .field { gap: 6px; }
+/* Small sub-section heading inside a collapsible panel (e.g. Camera > Effects). */
+.side-subhead {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  opacity: 0.75;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.35);
+}
+/* Camera panel while a color layer is selected: controls dim + disabled so
+   the inactive camera (see cameraActive) never edits invisibly. */
+#cameraPanel.camera-off .field input { opacity: 0.45; }
+#cameraPanel.camera-off .menu-row .btn { opacity: 0.45; }
+#cameraFillNote { margin-top: 2px; }
+/* Reusable modern slider: thin rounded track, filled progress, compact thumb.
+   Set --val (0..1) via JS or inline style to draw the filled portion. */
+.slider {
+  --val: 0.5;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: ew-resize;
+  display: block;
+}
+.slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--accent) calc(var(--val) * 100%),
+    var(--border) calc(var(--val) * 100%));
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-elev2);
+  box-shadow: 0 0 0 1px var(--accent);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: ew-resize;
+}
+.slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--bg-elev2);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: ew-resize;
+}
+.slider:hover::-webkit-slider-thumb,
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.25);
+  transform: scale(1.15);
+}
+.slider:hover::-moz-range-thumb,
+.slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.25);
+  transform: scale(1.15);
+}
+.slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.slider:disabled::-webkit-slider-thumb,
+.slider:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+.squash-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.squash-row .btn { width: auto; flex: 0 0 auto; }
+.squash-hint { font-size: 10px; color: var(--muted); }
+#gapSquashValue { color: var(--accent); font-weight: 600; }
+#gapSquashValue.is-auto { color: var(--muted); font-weight: 400; }
+
+.stage {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  gap: 0;
+}
+
+.preview-col {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Scroll container that also anchors the floating generation progress bar:
+   the bar is positioned against this box, so it stays put over the preview
+   even while the canvas is panned or zoomed. */
+.preview-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+}
+
+.preview-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  background: radial-gradient(900px 600px at 50% -10%, rgba(var(--accent-rgb),0.10), transparent 60%), var(--stage-bg);
+  overflow: auto;
+}
+.preview-stage {
+  position: relative;
+  flex: 0 0 auto;
+  margin: auto;
+}
+.preview-stage canvas { display: block; }
+/* Dot markers live on their own overlay canvas so editing never disturbs the
+   composite underneath (no smears or stale marker ghosts when scrubbing). */
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+#previewCanvas {
+  flex: 0 0 auto;
+  image-rendering: auto;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.06);
+  cursor: grab;
+  touch-action: none;
+}
+#previewCanvas.panning { cursor: grabbing; }
+
+.empty-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--bg-rgb), 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 5;
+}
+.empty-box {
+  max-width: 420px;
+  text-align: center;
+  padding: 26px 28px;
+  border: 1px dashed rgba(var(--border-soft-rgb), 0.7);
+  border-radius: 14px;
+  background: rgba(var(--elev-rgb), 0.88);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.35);
+}
+.empty-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+
+.transport {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(var(--elev-rgb), 0.92);
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  font-size: 12px;
+}
+.transport .status {
+  margin: 0;
+  padding: 2px 9px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+}
+.sep-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+
+.filmstrip {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--bg-elev);
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  min-height: 98px;
+  scrollbar-width: thin;
+}
+.filmstrip .thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 68px;
+  height: 76px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--border-soft-rgb), 0.55);
+  background: var(--bg-deep);
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34,1.15,0.64,1), border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.filmstrip .thumb:hover { transform: translateY(-1px); border-color: var(--border-strong); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+.filmstrip .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.filmstrip .thumb.key { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(var(--gold-rgb), 0.4); }
+.filmstrip .thumb.current { outline: 2px solid var(--accent); outline-offset: 1px; }
+.filmstrip .thumb .badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--gold);
+}
+.filmstrip .thumb .tlabel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 9px;
+  font-family: var(--mono);
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-strong);
+  text-align: center;
+}
+.filmstrip .thumb .actions {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--bg-rgb), 0.78);
+}
+.filmstrip .thumb:hover .actions { display: flex; }
+.filmstrip .thumb .actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev2);
+  color: var(--text);
+  cursor: pointer;
+}
+.filmstrip .thumb .actions button:hover { background: var(--bg-elev3); }
+
+.status {
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 6px 9px;
+  background: var(--bg-elev2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  word-break: break-word;
+}
+.status.ready { color: var(--accent-2); border-color: rgba(var(--accent2-rgb), 0.4); }
+.status.error { color: var(--danger); border-color: rgba(var(--danger-rgb), 0.4); }
+.status.downloading { color: var(--gold); border-color: rgba(var(--gold-rgb), 0.4); }
+
+.genbar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(420px, calc(100% - 28px));
+  padding: 10px 12px;
+  background: rgba(var(--bg-rgb), 0.92);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.bar {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--panel-deep);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.bar .fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+  transition: width 0.2s;
+}
+.bar-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-family: var(--mono);
+  word-break: break-all;
+}
+
+.note { font-size: 11px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+.note.warn { color: var(--gold); }
+
+.timeline-col {
+  flex: 0 0 auto;
+  height: 188px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev);
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.18);
+}
+
+/* Divider between the stage and the timeline: drag to resize the timeline
+   height, double-click to restore the default. */
+.tl-resizer {
+  flex: 0 0 auto;
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.35);
+  touch-action: none;
+  transition: background 0.16s ease;
+}
+.tl-resizer:hover, .tl-resizer.dragging { background: rgba(var(--accent-rgb), 0.14); }
+body.resizing-timeline { cursor: row-resize; user-select: none; }
+
+.tl-transport {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid rgba(var(--border-soft-rgb), 0.45);
+}
+
+.menu-label { font-size: 11px; font-weight: 650; color: var(--muted); letter-spacing: 0.02em; padding: 2px 10px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu button.danger { color: var(--danger); }
+.menu button.danger:hover { background: var(--danger-hover); }
+
+.timeline-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  position: relative;
+  cursor: text;
+}
+.track {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ruler {
+  flex: 0 0 auto;
+  height: 26px;
+  position: relative;
+  display: flex;
+  border-bottom: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  background: var(--ruler-bg);
+}
+.ruler .tick { position: absolute; top: 0; bottom: 0; }
+.ruler .tick .line { position: absolute; top: 0; width: 1px; background: var(--ruler-line); }
+.ruler .tick.minor .line { height: 6px; }
+.ruler .tick.major .line { height: 12px; background: var(--ruler-line-strong); }
+.ruler .tick .label {
+  position: absolute;
+  top: 12px;
+  left: 3px;
+  font-size: 9.5px;
+  font-family: var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* The ruler gutter matches the layer gutters below it and stays pinned while
+   the timeline scrolls horizontally. */
+.ruler-gutter {
+  position: sticky;
+  left: 0;
+  flex: 0 0 96px;
+  width: 96px;
+  z-index: 12;
+  background: var(--ruler-bg);
+  border-right: 1px solid rgba(var(--border-soft-rgb), 0.45);
+}
+
+.lane {
+  position: relative;
+  flex: 1 1 auto;
+}
+/* One row per layer: name gutter (sticky) + the layer's own timeline band. */
+.layer-row {
+  position: relative;
+  display: flex;
+  height: 62px;
+  border-bottom: 1px solid rgba(var(--border-soft-rgb), 0.35);
+  transition: background 0.14s ease;
+}
+.layer-row:hover { background: rgba(255,255,255,0.015); }
+/* Color-fill layers only hold dot chips (no keyframe previews), so their rows
+   are much thinner than normal layers. */
+.layer-row.thin {
+  height: 34px;
+}
+.layer-row.active .layer-content { background: rgba(var(--accent-rgb), 0.06); }
+.layer-gutter {
+  position: sticky;
+  left: 0;
+  flex: 0 0 96px;
+  width: 96px;
+  z-index: 12;
+  background: var(--bg-elev);
+  border-right: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: grab;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.layer-gutter:active { cursor: grabbing; }
+.layer-gutter .layer-grip {
+  margin-left: auto;
+  color: var(--muted);
+  opacity: 0.35;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  user-select: none;
+  transition: opacity 0.14s ease;
+}
+.layer-gutter:hover .layer-grip { opacity: 0.85; }
+.layer-row.dragging .layer-content { opacity: 0.45; }
+.layer-row.dragging { outline: 1px dashed var(--accent); outline-offset: -1px; }
+body.dragging-layer { cursor: grabbing; user-select: none; }
+.layer-gutter.active {
+  color: var(--text);
+  background: var(--bg-elev2);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+/* Layer name label + inline rename input (animation timeline). */
+.layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-name-input { width: 100%; min-width: 0; background: var(--bg-elev3);
+  color: var(--text); border: 1px solid var(--accent); border-radius: 3px;
+  font-size: 11px; padding: 1px 4px; box-sizing: border-box; }
+.layer-content {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.lane-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-dim);
+  font-size: 12px;
+  pointer-events: none;
+  border: 1px dashed var(--border);
+  margin: 10px 12px;
+  border-radius: 8px;
+}
+
+.gap-overlay {
+  position: absolute;
+  top: 32px;
+  bottom: 8px;
+  border-radius: 5px;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+.gap-overlay.ok { background: rgba(var(--accent2-rgb), 0.07); }
+.gap-overlay.dirty {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(var(--gold-rgb), 0.10) 0 8px,
+    rgba(var(--gold-rgb), 0.03) 8px 16px
+  );
+  border: 1px dashed rgba(var(--gold-rgb), 0.4);
+}
+.gap-overlay.warn {
+  border: 1px solid rgba(var(--warn-rgb), 0.55);
+  background: rgba(var(--warn-rgb), 0.07);
+  cursor: help;
+}
+/* Interpolation modes: squash gets a sage tint, none becomes a plain hold
+   band. Dirty gaps keep their gold stripes regardless of mode. */
+.gap-overlay.mode-squash:not(.dirty) { background: rgba(var(--accent2-rgb), 0.11); }
+.gap-overlay.mode-none:not(.dirty) { border: 1px dashed var(--border); background: transparent; }
+.gap-overlay.selected { outline: 1px solid var(--accent); outline-offset: 1px; }
+.gap-overlay.selected::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+.gap-overlay .glabel {
+  position: absolute;
+  top: -14px;
+  left: 4px;
+  font-size: 9px;
+  font-family: var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* A label pushed onto a stacked row gets a solid badge so it stays readable
+   over the gap stripes and keyframe chips below it. */
+.gap-overlay .glabel.stacked {
+  background: rgba(var(--bg-rgb), 0.95);
+  border: 1px solid var(--border);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--text-strong);
+  z-index: 15; /* above chips (z 10) so stacked rows aren't hidden behind them */
+}
+.gap-overlay .gap-warn {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  right: 4px;
+  font-size: 9px;
+  font-family: var(--mono);
+  color: var(--warn);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gap-tip {
+  position: fixed;
+  z-index: 500;
+  max-width: 270px;
+  padding: 7px 10px;
+  background: var(--bg-elev2);
+  border: 1px solid rgba(var(--danger-rgb), 0.45);
+  border-radius: 6px;
+  color: var(--danger-text);
+  font-size: 11px;
+  line-height: 1.45;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.gap-tip.hidden { display: none; }
+
+.frame-dot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  top: 38px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.kf {
+  position: absolute;
+  top: 12px;
+  height: 50px;
+  min-width: 12px;
+  background: rgba(var(--gold-rgb), 0.09);
+  border-radius: 9px;
+  border: 1px solid rgba(var(--gold-rgb), 0.3);
+  cursor: grab;
+  user-select: none;
+  touch-action: none; /* let a touch drag move the chip instead of scrolling */
+}
+.kf:active { cursor: grabbing; }
+.kf:hover { border-color: rgba(var(--gold-rgb), 0.5); }
+.kf .kf-thumb {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 38px;
+  height: 38px;
+  max-width: calc(100% - 4px); /* clamp to the chip so narrow holds don't paint over the next cell */
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid var(--gold);
+  background: var(--bg-deep);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.kf .kf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kf .kf-time {
+  position: absolute;
+  left: 3px;
+  bottom: 1px;
+  max-width: calc(100% - 6px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 8.5px;
+  font-family: var(--mono);
+  color: var(--text-strong);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 0 3px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.kf.selected { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.14); }
+.kf.selected .kf-thumb { border-color: var(--accent); }
+.kf .kf-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  border-radius: 0 8px 8px 0;
+}
+.kf .kf-resize:hover { background: rgba(var(--gold-rgb), 0.22); }
+.kf .kf-resize::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: rgba(var(--gold-rgb), 0.5);
+}
+.kf .kf-drag-tip {
+  position: absolute;
+  top: -22px;
+  font-size: 10px;
+  font-family: var(--mono);
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  z-index: 30;
+}
+
+.fill-dot {
+  position: absolute;
+  top: 7px;
+  height: 20px;
+  min-width: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border-radius: 7px;
+  background: rgba(79, 143, 255, 0.12);
+  border: 1px solid rgba(79, 143, 255, 0.4);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  overflow: hidden;
+}
+.fill-dot:hover { border-color: rgba(79, 143, 255, 0.65); background: rgba(79, 143, 255, 0.18); }
+.fill-dot.selected {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.fill-dot-swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.fill-dot-label {
+  font-size: 8.5px;
+  font-family: var(--mono);
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.fill-dot-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+.fill-dot-edge.left { left: 0; border-radius: 8px 0 0 8px; }
+.fill-dot-edge.right { right: 0; border-radius: 0 8px 8px 0; }
+.fill-dot-edge:hover { background: rgba(255, 255, 255, 0.12); }
+.fill-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-dim);
+  font-size: 11px;
+  pointer-events: none;
+  border: 1px dashed var(--border);
+  margin: 10px 12px;
+  border-radius: 8px;
+  text-align: center;
+  padding: 0 10px;
+}
+/* Color picker input in the dot panel: match the other field inputs. */
+.field input[type="color"] {
+  width: 100%;
+  height: 30px;
+  padding: 2px;
+  background: var(--panel-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.field input[type="color"]:hover { border-color: var(--border-strong); }
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  margin-left: -3.5px; /* keep the 2px line centered on the time */
+  z-index: 25;
+  cursor: ew-resize;
+  /* transparent grab strip; the visible line is drawn by ::before */
+}
+.playhead::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3.5px;
+  width: 2px;
+  background: var(--danger);
+}
+.playhead::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 9px;
+  height: 11px;
+  background: var(--danger);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+/* Drop placement guide: shown while an asset drags over the timeline. */
+.drop-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+  z-index: 20;
+  pointer-events: none;
+  display: none;
+}
+.drop-guide.visible { display: block; }
+.drop-guide-label {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--on-accent);
+  background: var(--accent);
+  border-radius: 3px;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+
+.timeline-hint {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 12px;
+  font-size: 10.5px;
+  color: var(--muted);
+  border-top: 1px solid rgba(var(--border-soft-rgb), 0.35);
+  background: var(--bg-elev);
+}
+.timeline-hint b { color: var(--text-strong); }
+
+.toast {
+  position: fixed;
+  bottom: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(var(--elev2-rgb), 0.97);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border: 1px solid rgba(var(--border-soft-rgb), 0.6);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  z-index: 100;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  max-width: 80vw;
+  pointer-events: none; /* informational only: never swallow clicks */
+  animation: toast-in 0.24s cubic-bezier(0.34,1.15,0.64,1);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* General polish: subtle lift + ring on interactive cards, focus rings for
+   keyboard users, and a shimmer on the progress fill. */
+.asset { transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+.asset:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elev3);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+.kf-card { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.kf-card:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.filmstrip .thumb img { transition: transform 0.18s ease; }
+.filmstrip .thumb:hover img { transform: scale(1.07); }
+.filmstrip .thumb .actions button { transition: background 0.12s ease, transform 0.12s ease; }
+.filmstrip .thumb .actions button:hover { background: var(--bg-elev3); transform: translateY(-1px); }
+.kf { transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
+.kf:hover { border-color: rgba(var(--gold-rgb), 0.5); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+.kf.selected:hover { border-color: var(--accent); }
+
+/* Camera track (timeline row + keyframe chips)
+   The camera row mirrors a layer row (gutter + content) but is NOT a
+   .layer-row, so the layer-reorder index math in drag.js ignores it. */
+.camera-row {
+  position: relative;
+  display: flex;
+  height: 62px;
+  border-bottom: 1px solid rgba(var(--border-soft-rgb), 0.35);
+  background: rgba(0, 0, 0, 0.16);
+}
+.camera-row .layer-gutter {
+  color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.cam-dot {
+  position: absolute;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--accent);
+  border-radius: 3px;
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.cam-dot:hover { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+
+
+/* Reference audio lane (waveform under the timeline)
+   Spans the full timeline width (like .lane) and draws the waveform with the
+   same GUTTER_W time offset as the lane, so clicks map to the right time. */
+#audioLane {
+  position: relative;
+  margin: 6px 0 10px;
+  height: 48px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+}
+#audioLane.hidden { display: none !important; }
+#audioCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Keyboard focus rings (mouse users keep the clean look). */
+.btn:focus-visible,
+.menu button:focus-visible,
+.asset:focus-visible,
+.kf:focus-visible,
+.filmstrip .thumb:focus-visible,
+.slider:focus-visible,
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respect users who prefer reduced motion: kill animations and springy
+   transforms, keep functional transitions instant. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001s !important;
+  }
+  .btn:hover, .asset:hover { transform: none; box-shadow: none; }
+  .filmstrip .thumb:hover img { transform: none; }
+}
+
+/* scrollbars */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+::-webkit-scrollbar-track { background: transparent; }
+

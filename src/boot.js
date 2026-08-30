@@ -66,6 +66,7 @@
   }
 
   function boot() {
+    loadTheme();
     syncInputs();
     applyWorkSize();
     refreshDirty();
@@ -132,6 +133,7 @@
   function syncInputs() {
     el.fpsInput.value = String(state.fps);
     el.snapInput.checked = state.snap;
+    el.themeInput.value = themeName();
     el.resInput.value = String(state.res);
     el.aspectInput.value = state.aspect;
     el.customWInput.value = String(state.customW);

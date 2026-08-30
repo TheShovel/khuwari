@@ -1,0 +1,151 @@
+/* mobile
+
+   Everything below only kicks in on narrow screens; desktop is untouched.
+   The side panels become sliding drawers over the preview (the timeline stays
+   visible below them), the start screen stacks, and touch gets its own
+   hit-sizes and safe-area padding. */
+
+.mobile-only { display: none !important; }
+
+@media (max-width: 860px) {
+  /* drawer toggle buttons in the toolbar */
+  .mobile-only { display: inline-flex !important; }
+  /* but a mobile-only row of panel buttons stays a full-width flex row */
+  .menu-row.mobile-only { display: flex !important; }
+  .toolbar { padding: 8px 10px; gap: 8px; }
+  .toolbar-brand .brand-name { display: none; }
+  .toolbar-group { gap: 6px; }
+
+  /* side panels become fixed drawers; JS positions them between the toolbar
+     and the timeline so the timeline stays reachable for scrubbing and drops */
+  .side-resizer { display: none; }
+  .side-col {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 120;
+    width: min(300px, 86vw);
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .side-col.right {
+    right: 0;
+    left: auto;
+    border-right: none;
+    border-left: 1px solid rgba(var(--border-soft-rgb), 0.45);
+  }
+  /* off-screen to the right when closed, slides in from the right edge */
+  .side-col.right { transform: translateX(108%); }
+  .side-col.right.open { transform: translateX(0); }
+  /* default hidden, slid off the left edge */
+  .side-col { transform: translateX(-108%); }
+  .side-col.open { transform: translateX(0); }
+
+  /* backdrop behind an open drawer */
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: rgba(12, 14, 17, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+
+  /* dropdown menus clamp to the viewport so they never go off-screen */
+  .menu { max-width: min(320px, 92vw); }
+  .menu-wrap { max-width: 100%; }
+
+  /* start screen stacks: banner on top, menu below */
+  .start-screen { flex-direction: column; }
+  .start-art {
+    width: 100%;
+    height: 36vh;
+    min-height: 150px;
+  }
+  .start-art::after {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(80px, 26%);
+    background: linear-gradient(to bottom, rgba(var(--bg-rgb), 0), var(--bg));
+  }
+  .start-panel { padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px)); }
+  .start-name { font-size: 38px; }
+
+  /* timeline: touch drags scrub / move chips instead of scrolling the lane */
+  .ruler, .lane { touch-action: pan-y; }
+  .playhead { touch-action: pan-y; }
+  .tl-transport { gap: 6px; padding: 7px 8px; }
+  /* steady finger targets: transport icon buttons get wider so a tap aimed at
+     a button's right side can't land in the gap between buttons */
+  .tl-transport .btn.icon { min-width: 40px; min-height: 40px; }
+  .timeline-hint { flex-wrap: wrap; }
+
+  /* transport + status take less room so the preview gets more */
+  .transport { padding: 7px 10px; gap: 8px; }
+  .transport .status { max-width: 38vw; }
+
+  /* safe areas for notched phones */
+  .toolbar { padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
+  .timeline-col { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tl-resizer { height: 10px; }
+
+  .filmstrip { min-height: 84px; }
+  .filmstrip .thumb { width: 62px; height: 70px; }
+  .filmstrip .thumb .badge { font-size: 9px; }
+
+  /* touch-friendly affordances: things that only ever appeared on hover */
+  .asset-del { display: flex !important; width: 26px; height: 26px; min-width: 26px; }
+  .asset-del svg { width: 16px; height: 16px; }
+  .filmstrip .thumb .actions { display: flex !important; }
+  .filmstrip .thumb .actions button { padding: 6px 8px; font-size: 11px; }
+  .kf .kf-resize { width: 24px; } /* wider resize edge for a finger */
+
+  /* bigger tap targets for the small buttons */
+  .btn.icon { min-height: 40px; min-width: 44px; }
+  .btn.mini { min-height: 34px; padding: 6px 10px; }
+  .field input[type="number"], .field input[type="text"], .field select,
+  .field input[type="range"] { min-height: 40px; }
+  .field input[type="number"], .field select { font-size: 14px; padding: 9px 10px; }
+
+  /* dropdown menus: bigger, easier to tap */
+  .menu button { padding: 10px 12px; font-size: 14px; }
+  .menu button svg { width: 18px; height: 18px; }
+  .menu .field { font-size: 13px; }
+  .menu .field input, .menu .field select { padding: 9px 10px; font-size: 14px; }
+
+  /* context menu (long-press on a chip): bigger items */
+  .context-menu button { padding: 11px 14px; font-size: 14.5px; }
+  .context-menu button svg { width: 18px; height: 18px; }
+
+  /* sliders: a thumb a finger can grab */
+  .slider::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -9px; }
+  .slider::-moz-range-thumb { width: 22px; height: 22px; }
+
+  /* no browser tap highlight / long-press callout, and taps are instant
+     (no 300ms hover delay) */
+  * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  .btn, .asset, .filmstrip .thumb, .menu button, .context-menu button,
+  .field input, .field select, .kf, .gap-overlay, .layer-gutter,
+  .layer-row, .fill-dot { touch-action: manipulation; }
+  .kf .kf-resize, .tl-resizer, .side-resizer { touch-action: none; }
+
+  .kf-drag-tip { font-size: 11px; }
+  .asset-ghost { width: 54px; height: 54px; }
+}
+
+@media (max-width: 480px) {
+  .toolbar-brand { display: none; }
+  .btn { padding: 6px 9px; }
+  .btn.icon { min-width: 34px; padding: 7px 9px; }
+  .tl-transport .btn { font-size: 12px; }
+  .start-name { font-size: 32px; }
+  .start-art { height: 30vh; }
+  .side-col { width: min(280px, 92vw); }
+  .bar-meta { font-size: 9.5px; }
+}
+

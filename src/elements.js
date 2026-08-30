@@ -134,6 +134,7 @@
     genMeta: byId('genMeta'),
     fpsInput: byId('fpsInput'),
     snapInput: byId('snapInput'),
+    themeInput: byId('themeInput'),
     resInput: byId('resInput'),
     aspectInput: byId('aspectInput'),
     manualAspectRow: byId('manualAspectRow'),
