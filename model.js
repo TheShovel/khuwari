@@ -13,16 +13,24 @@
   var ORT_JS = ORT_CDN + 'ort.min.js';
   var ORT_WASM = ORT_CDN; // ort fetches ort-wasm*.wasm from this path
 
-  // RIFE ONNX export (frame interpolation). Must accept [1,6,H,W] float32
-  // (frame A RGB + frame B RGB, 0..1) and emit [1,3,H,W] float32 (0..1).
+  // RIFE fp32 ONNX (frame interpolation). Accepted input layouts (auto-detected
+  // by detectFeedPlan, so this stays a URL swap):
+  //   one 6-channel input [1,6,H,W] (frame A RGB ++ frame B RGB, 0..1), with or
+  //   without a scalar 'timestep' input, or two 3-channel inputs (+ timestep).
+  // All emit [1,3,H,W] float32 (0..1).
   //
-  // Non-ensemble rife49: the ensemble_True export unrolls 4 averaged passes in
-  // the graph; the non-ensemble variant is ~1.4x faster per inference with a
-  // measured mean output difference of ~0.04/255 (visually identical) on the
-  // same rife49 weights. Swap back to the ensemble URL if you ever see motion
-  // artifacts you prefer to average out:
-  //   https://huggingface.co/yuvraj108c/rife-onnx/resolve/main/rife49_ensemble_True_scale_1_sim.onnx
-  var MODEL_URL = 'https://huggingface.co/ChimairrA/rife49_ensemble_False_scale_1_sim/resolve/main/rife49_ensemble_False_scale_1_sim.onnx';
+  // Current: timestep-exposed fp32 export. An export WITHOUT a live timestep
+  // input renders every inbetween at the folded t=0.5, so multi-frame gaps
+  // need this. Weights are a v4.x export (MIT); the exporter benchmarked it
+  // ahead of the 4.9 and 4.26 releases at every non-midpoint phase (0.4-0.9 dB
+  // on Xiph clips), which is exactly where multi-frame gaps live.
+  //   https://huggingface.co/walterlow/RIFE_fp32_timestep
+  // Earlier rife49 export (kept for rollback):
+  //   https://huggingface.co/ChimairrA/rife49_ensemble_False_scale_1_sim/resolve/main/rife49_ensemble_False_scale_1_sim.onnx
+  // The ensemble_True rife49 variant unrolls 4 averaged passes in the graph;
+  // the non-ensemble is ~1.4x faster with a measured mean output difference of
+  // ~0.04/255 (visually identical) on the same rife49 weights.
+  var MODEL_URL = 'https://huggingface.co/walterlow/RIFE_fp32_timestep/resolve/main/RIFE_fp32_timestep.onnx';
 
   // Super-resolution ONNX model for export upscaling (Real-ESRGAN-style).
   // Accepts [1,3,H,W] float32 (0..1) and emits [1,3,H*4,W*4] float32.
@@ -201,7 +209,7 @@
       }
     }
     var feeds = {};
-    if (plan.kind === 'six') {
+    if (plan.kind === 'six' || plan.kind === 'sixPlusTs') {
       var six = new Float32Array(6 * n);
       concatFramesInto(six, aData, bData, n);
       feeds[plan.aName] = new root.ort.Tensor('float32', six, [1, 6, h, w]);
@@ -294,38 +302,69 @@
   // Figure out the model's input layout ONCE, after loading. interpolate() then
   // builds only the tensors that layout needs (the previous code built all
   // three candidates, a wasted 6n float fill on every frame for layout C).
+  // onnxruntime-web 1.20.x (what Khuwari loads) exposes NO inputMetadata / dims
+  // on sessions, so layouts must be classified by input NAME COUNT:
+  //   1 input (~'input')                  -> 6-channel concat [1,6,H,W]
+  //   1 input + 'timestep'                -> 6-channel + timestep (t must be fed!)
+  //   2 inputs (img0/img1, x/y, ...)      -> two 3-channel inputs
+  //   2 inputs + 'timestep'               -> two 3-channel + timestep
+  // The timestep's exact shape (scalar vs [1] vs [1,1,1,1]) varies per export;
+  // interpolate() probes it with a retry ladder and remembers the winner.
   function detectFeedPlan(session) {
     var names = [];
     try { names = session.inputNames || []; } catch (e) {}
     var plan = { kind: 'six', aName: 'input', bName: null, tsName: null, tsDims: [1] };
-    if (!names.length) return plan; // no metadata: assume the single 6-channel layout
-    var six = null, frames = [], tsName = null, tsDims = null;
+    if (!names.length) return plan;
+    var tsName = null, others = [];
     for (var k = 0; k < names.length; k++) {
-      var meta = session.inputMetadata ? session.inputMetadata[names[k]] : null;
-      var dims = meta && meta.dims ? meta.dims : null;
-      var ch = dims && dims.length > 1 ? dims[1] : 0;
-      if (ch === 6) { six = names[k]; break; }
-      if (isTimestepName(names[k])) { tsName = names[k]; tsDims = dims && dims.length ? dims : [1]; }
-      else frames.push(names[k]);
+      if (isTimestepName(names[k])) tsName = names[k];
+      else others.push(names[k]);
     }
-    if (six) {
-      plan.kind = 'six';
-      plan.aName = six;
-    } else if (tsName && frames.length >= 2) {
-      plan.kind = 'twoPlusTs';
-      plan.aName = frames.filter(isFrameAName)[0] || frames[0];
-      plan.bName = frames[0] === plan.aName ? frames[1] : frames[0];
-      plan.tsName = tsName;
-      plan.tsDims = tsDims || [1];
-    } else if (frames.length >= 2) {
-      plan.kind = 'two';
-      plan.aName = frames.filter(isFrameAName)[0] || frames[0];
-      plan.bName = frames[0] === plan.aName ? frames[1] : frames[0];
+    if (others.length === 1) {
+      // Single image input = the 6-channel concat layout.
+      plan.kind = tsName ? 'sixPlusTs' : 'six';
+      plan.aName = others[0];
+    } else if (others.length >= 2) {
+      plan.kind = tsName ? 'twoPlusTs' : 'two';
+      plan.aName = others.filter(isFrameAName)[0] || others[0];
+      plan.bName = others[0] === plan.aName ? others[1] : others[0];
     } else {
+      // Only a timestep-named input: nonsense; assume the 6-channel default.
       plan.kind = 'six';
       plan.aName = names[0];
     }
+    plan.tsName = tsName;
     return plan;
+  }
+
+  // Exports disagree on the timestep input's shape (0-d scalar vs [1] vs
+  // [1,1,1,1]); ORT web rejects a mismatched feed, which would silently drop
+  // every frame to the caller's mesh-warp fallback. Probe: try the previous
+  // winner, then the shape ladder; memoize the first that runs.
+  var TS_CANDIDATES = [[], [1], [1, 1], [1, 1, 1, 1]];
+  function tryRun(plan, feeds, tsName, ts) {
+    var tsData = new Float32Array([ts]);
+    if (plan.tsDimsResolved) {
+      feeds[tsName] = new root.ort.Tensor('float32', tsData, plan.tsDimsResolved);
+      return state.session.run(feeds).then(function (results) { return results; });
+    }
+    var i = 0;
+    var attempt = function () {
+      if (i >= TS_CANDIDATES.length) return Promise.reject(new Error('timestep feed rejected in every shape'));
+      try {
+        feeds[tsName] = new root.ort.Tensor('float32', tsData, TS_CANDIDATES[i]);
+      } catch (e) {
+        // Some runtimes reject exotic dims in the constructor itself.
+        i++;
+        return attempt();
+      }
+      i++;
+      return state.session.run(feeds).then(function (results) {
+        plan.tsDimsResolved = feeds[tsName].dims;
+        return results;
+      }, function () { return attempt(); });
+    };
+    return attempt();
   }
 
   // Interpolate an inbetween from two keyframe RGBA buffers (size w×h) at time t.
@@ -338,12 +377,6 @@
     var plan = state.feedPlan;
     var n = w * h;
     var feeds = feedsFor(aData, bData, n, plan, w, h);
-    if (plan.kind === 'twoPlusTs') {
-      // The timestep changes per frame, so it can't live in the feed cache.
-      var ts = (typeof t === 'number' && isFinite(t)) ? t : 0.5;
-      feeds[plan.tsName] = new root.ort.Tensor('float32', new Float32Array([ts]), plan.tsDims);
-    }
-
     // Pre-flight check: ONNX Runtime errors are cryptic when feed data length
     // doesn't match the input's expected size, so catch it here with a clear message.
     var feedNames = Object.keys(feeds);
@@ -359,8 +392,15 @@
         ));
       }
     }
-
-    return state.session.run(feeds).then(function (results) {
+    var run;
+    if (plan.kind === 'twoPlusTs' || plan.kind === 'sixPlusTs') {
+      // The timestep changes per frame, so it can't live in the feed cache.
+      var ts = (typeof t === 'number' && isFinite(t)) ? t : 0.5;
+      run = tryRun(plan, feeds, plan.tsName, ts);
+    } else {
+      run = state.session.run(feeds);
+    }
+    return run.then(function (results) {
       var outNames = Object.keys(results);
       if (!outNames.length) throw new Error('Model returned no outputs');
       var out = results[outNames[0]];

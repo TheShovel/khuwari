@@ -224,6 +224,164 @@ function generateGap(msg) {
     return Promise.resolve();
   };
 
+  // --- multi-pass (hierarchical) interpolation ---
+  // RIFE degrades as the motion between its two inputs grows, so long gaps
+  // (many inbetweens between two keyframes) are filled in two stages: first a
+  // dyadic midpoint tree down to depth D (largest D with 2^D <= N+1) — every
+  // model call there is a t=0.5 midpoint between frames 2^(D-j) apart, so the
+  // per-call motion shrinks by half each level — then each requested frame is
+  // rendered directly from its two grid neighbours. Every final model call
+  // then sees at most ~2/(N+1) of the gap's motion instead of up to the whole
+  // gap, at the cost of ~2^D extra renders. Speed is deliberately not the
+  // priority here; emit(m) with msg.hier===false keeps the old single-pass
+  // behaviour.
+  var useHier = mode === 'ai' && missing.length >= 2 && msg.hier !== false && !framesIdentical;
+  var hierDepth = 0;
+  if (useHier) {
+    var segs = missing.length + 1;
+    while ((1 << (hierDepth + 1)) <= segs) hierDepth++;
+  }
+  var hierLevels = null;   // hierLevels[d][j] = { t: j/2^d, buf, gray }
+  var hierBuilt = false;
+  var hierChain = null;
+
+  // Transparency for a rendered frame: union of the two flow-warped alpha
+  // channels of the ORIGINAL keyframes (dense flow; the mesh dilutes thin
+  // strokes), plus stripping the key tint from the RGB for matte gaps.
+  // Takes the frame's gap position: hierarchical intermediates warp at their
+  // own t, so each level sees the silhouette where it actually is.
+  var applyAlphaAt = function (rgba, tG) {
+    var alpha = morph.warpAlphaDense(aData, bData, meshes.flowAB, meshes.flowBA, width, height, tG);
+    if (matteK) morph.removeKey(rgba, n, matteK, alpha);
+    else {
+      for (var p = 0, q = 0; p < n; p++, q += 4) rgba[q + 3] = alpha[p];
+    }
+  };
+
+  // Pure render: the inbetween between two already-finalized buffers at the
+  // LOCAL phase tLocal (model or mesh + alpha + matte, no blur, no post).
+  // tGlobal is the frame's position inside the gap; the model's own inputs at
+  // every level are premultiplied by alpha, so intermediates carry their real
+  // alpha into the next level exactly like the keyframes do.
+  var renderBetween = function (ab, bb, gA, gB, tLocal, tGlobal) {
+    var meshFallback = function () {
+      return ensureMeshes().then(function () {
+        if (cancelled) return null;
+        var frame = opaque
+          ? morph.morphFrameMesh(aFlow, bFlow, meshes, width, height, tGlobal)
+          // Thin line art: the coarse mesh averages strokes' motion to ~0
+          // (ghosting). Render with the dense per-pixel morph instead.
+          : morph.morphFrame(aFlow, bFlow, meshes.flowAB, meshes.flowBA, width, height, tGlobal);
+        if (!opaque) applyAlphaAt(frame, tGlobal);
+        return { rgba: frame, ai: false };
+      });
+    };
+    // Duplicate keyframes: every inbetween IS the keyframe; ship a copy
+    // (never transfer/mutate the shared original) and skip both model passes.
+    if (framesIdentical) return Promise.resolve({ rgba: new Uint8ClampedArray(aData), ai: true });
+    if (model.isReady()) {
+      return model.interpolate(ab, bb, width, height, tLocal).then(function (aiOut) {
+        if (cancelled) return null;
+        if (opaque) return { rgba: aiOut, ai: true };
+        // Static silhouette: the interpolated alpha is the keyframes' shared
+        // mask; stamp it with removeKey (identical math to applyGrayAlphaRaw)
+        // and skip the alpha model pass entirely.
+        if (staticAlpha) {
+          morph.removeKey(aiOut, n, matteK, staticAlpha);
+          return { rgba: aiOut, ai: true };
+        }
+        var alphaFallback = function () {
+          // Model alpha pass failed or no grays: mesh-union alpha warp of the
+          // original keyframes at the frame's gap position.
+          return ensureMeshes().then(function () {
+            if (cancelled) return null;
+            applyAlphaAt(aiOut, tGlobal);
+            return { rgba: aiOut, ai: true };
+          });
+        };
+        if (gA && gB) {
+          // Model-driven alpha: interpolate the alpha channel as grayscale.
+          // Output consumed raw (channel 0); no RGBA conversion needed.
+          return model.interpolate(gA, gB, width, height, tLocal, true).then(function (alphaTensor) {
+            if (cancelled) return null;
+            morph.applyGrayAlphaRaw(aiOut, alphaTensor, n, matteK);
+            return { rgba: aiOut, ai: true };
+          }, alphaFallback);
+        }
+        return alphaFallback();
+      }).catch(function (err) {
+        if (cancelled) return null;
+        console.error('ML inbetween failed, using mesh warp:', err);
+        return meshFallback();
+      });
+    }
+    return meshFallback();
+  };
+
+  // Build the dyadic midpoint tree (once per gap; every final frame renders
+  // against it, and its own renders reuse the parent levels). Levels are built
+  // strictly in order so the model never sees two overlapping jobs.
+  var buildHier = function () {
+    if (!useHier || hierBuilt) return Promise.resolve();
+    if (hierChain) return hierChain;
+    post({ type: 'gap-progress', jobId: jobId, label: 'High-pass inbetweens…', gapFrac: 0 });
+    hierChain = Promise.resolve().then(function () {
+      hierLevels = [[{ t: 0, buf: aFlow, gray: aGray }, { t: 1, buf: bFlow, gray: bGray }]];
+      var chain = Promise.resolve();
+      for (var d = 1; d <= hierDepth; d++) {
+        (function (d) {
+          chain = chain.then(function () {
+            if (cancelled) return;
+            var prevLevel = hierLevels[d - 1];
+            var next = new Array((1 << d) + 1);
+            var step = 1 / (1 << d);
+            var j = 0;
+            var build = function () {
+              if (cancelled) return Promise.resolve();
+              if (j > (1 << d)) {
+                hierLevels[d] = next;
+                return Promise.resolve();
+              }
+              if (j % 2 === 0) { next[j] = prevLevel[j >> 1]; j++; return build(); }
+              var lo = prevLevel[(j - 1) >> 1], hi = prevLevel[(j + 1) >> 1];
+              var gA = lo.gray, gB = hi.gray;
+              // Grays describe the buffer's REAL alpha; precomputed once per
+              // buffer so repeated renders reuse them.
+              if (!gA && matteK) gA = morph.alphaToGray(lo.buf, width, height);
+              if (!gB && matteK) gB = morph.alphaToGray(hi.buf, width, height);
+              return renderBetween(lo.buf, hi.buf, gA, gB, 0.5, step * j).then(function (r) {
+                if (cancelled || !r) return;
+                next[j] = {
+                  t: step * j,
+                  buf: r.rgba,
+                  gray: matteK ? morph.alphaToGray(r.rgba, width, height) : null
+                };
+                j++;
+                return build();
+              });
+            };
+            return build();
+          });
+        })(d);
+      }
+      return chain.then(function () { if (!cancelled) hierBuilt = true; });
+    });
+    return hierChain;
+  };
+
+  // A requested frame at t sits between its two dyadic grid neighbours; render
+  // it from those directly (the grid itself guarantees the per-call motion
+  // bound; the final call re-uses the exact single-pass render path).
+  var hierSegment = function (t) {
+    var M = 1 << hierDepth;
+    var x = t * M;
+    var i = x | 0;
+    if (i > M - 1) i = M - 1;
+    var lev = hierLevels[hierDepth];
+    var lo = lev[i], hi = lev[i + 1];
+    return { bufA: lo.buf, bufB: hi.buf, grayA: lo.gray, grayB: hi.gray, tLocal: x - i };
+  };
+
   var emit = function (m) {
     if (cancelled) return Promise.resolve();
     var t = m.t;
@@ -240,86 +398,30 @@ function generateGap(msg) {
         return send(morph.motionBlurFrame(rgba, meshes, width, height, t, blur.intensity), ai);
       });
     };
-    // Transparency for a rendered frame: union of the two flow-warped alpha
-    // channels of the ORIGINAL keyframes (dense flow; the mesh dilutes thin
-    // strokes), plus stripping the key tint from the RGB for matte gaps.
-    var applyAlpha = function (rgba) {
-      var alpha = morph.warpAlphaDense(aData, bData, meshes.flowAB, meshes.flowBA, width, height, t);
-      if (matteK) morph.removeKey(rgba, n, matteK, alpha);
-      else {
-        for (var p = 0, q = 0; p < n; p++, q += 4) rgba[q + 3] = alpha[p];
-      }
-    };
-    // The model interpolates the matte (opaque) input; transparency comes from
-    // the mesh-union alpha warp of the ORIGINAL keyframes (crisp silhouette).
-    // Fully opaque gaps skip all of it; the result is byte-identical and a
-    // full mesh warp per frame is avoided.
-    var renderMorph = function () {
-      if (opaque) return morph.morphFrameMesh(aFlow, bFlow, meshes, width, height, t);
-      // Thin line art: the coarse mesh averages strokes' motion to ~0 (ghosting).
-      // Render with the dense per-pixel morph instead.
-      return morph.morphFrame(aFlow, bFlow, meshes.flowAB, meshes.flowBA, width, height, t);
-    };
     if (mode === 'squash') {
       return ensureMeshes().then(function () {
         var frame = morph.squashStretchFrame(aFlow, bFlow, meshes, width, height, t, squash);
-        if (!opaque) applyAlpha(frame);
+        if (!opaque) applyAlphaAt(frame, t);
         return finish(frame, false);
       });
     }
-    if (model.isReady()) {
-      // Duplicate keyframes: every inbetween IS the keyframe; ship a copy
-      // (never transfer/mutate the shared original) and skip both model passes.
-      if (framesIdentical) {
-        return finish(new Uint8ClampedArray(aData), true);
-      }
-      return model.interpolate(aFlow, bFlow, width, height, t).then(function (aiOut) {
+    var renderHere = function (ab, bb, gA, gB, tl) {
+      return renderBetween(ab, bb, gA, gB, tl, t).then(function (r) {
+        if (cancelled || !r) return;
+        return finish(r.rgba, r.ai);
+      });
+    };
+    if (useHier) {
+      return buildHier().then(function () {
         if (cancelled) return;
-        if (opaque) return finish(aiOut, true);
-        // Static silhouette: the interpolated alpha is the keyframes' shared
-        // mask; stamp it with removeKey (identical math to applyGrayAlphaRaw)
-        // and skip the alpha model pass entirely.
-        if (staticAlpha) {
-          morph.removeKey(aiOut, n, matteK, staticAlpha);
-          return finish(aiOut, true);
-        }
-        // Model-driven alpha: interpolate the alpha channel as grayscale. The
-        // output is consumed raw (channel 0); no RGBA conversion needed.
-        if (aGray) {
-          return model.interpolate(aGray, bGray, width, height, t, true).then(function (alphaTensor) {
-            if (cancelled) return;
-            morph.applyGrayAlphaRaw(aiOut, alphaTensor, n, matteK);
-            return finish(aiOut, true);
-          }, function () {
-            // Alpha pass failed: fall back to the mesh-union alpha warp.
-            if (cancelled) return;
-            return ensureMeshes().then(function () {
-              if (cancelled) return;
-              applyAlpha(aiOut);
-              return finish(aiOut, true);
-            });
-          });
-        }
-        return ensureMeshes().then(function () {
-          if (cancelled) return;
-          applyAlpha(aiOut);
-          return finish(aiOut, true);
-        });
-      }).catch(function (err) {
-        if (cancelled) return;
-        console.error('ML inbetween failed, using mesh warp:', err);
-        return ensureMeshes().then(function () {
-          var frame = renderMorph();
-          if (!opaque) applyAlpha(frame);
-          return finish(frame, false);
-        });
+        var seg = hierSegment(t);
+        // On-grid frames ARE the rendered grid node (phase 0 would only
+        // approximate it); pass it through with blur/motion post as usual.
+        if (seg.tLocal === 0) return finish(seg.bufA, true);
+        return renderHere(seg.bufA, seg.bufB, seg.grayA, seg.grayB, seg.tLocal);
       });
     }
-    return ensureMeshes().then(function () {
-      var frame = renderMorph();
-      if (!opaque) applyAlpha(frame);
-      return finish(frame, false);
-    });
+    return renderHere(aFlow, bFlow, aGray, bGray, t);
   };
 
   var i = 0;
