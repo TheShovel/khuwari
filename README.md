@@ -38,7 +38,7 @@ There's full documentation on our website. You can view all the categories and s
 
 The actual editor code is inside `src/` as plain pure JavaScript. Every category has its own file, and is loaded inside the `editor.html` in the order of dependency.
 
-The docs text lives as Markdown in `docs-src/` and is generated into `docs/` by `site_tools/gen-docs-subpages.js`. Edit the Markdown, run the script, and commit the regenerated pages (see `docs-src/README.md` for the format).
+The docs text is written as Markdown in `docs-src/` and is generated into `docs/` by `site_tools/gen-docs-subpages.js`. (see `docs-src/README.md` for the format).
 
 ## Testing
 
