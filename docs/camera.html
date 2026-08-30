@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Camera · Khuwari</title>
-<meta name="description" content="A non-destructive camera: pan, zoom and rotation plus lens and film effects, every value keyframed on its own track.">
+<meta name="description" content="A non-destructive camera: pan, zoom and rotation plus lens and film effects, all keyframed on their own track.">
 <link rel="stylesheet" href="../site.css">
 </head>
 <body>
@@ -59,14 +59,14 @@
 
     <header class="doc-head rise-1">
       <h1>Camera</h1>
-      <p>A non-destructive camera: pan, zoom and rotation plus lens and film effects, every value keyframed on its own track.</p>
+      <p>A non-destructive camera: pan, zoom and rotation plus lens and film effects, all keyframed on their own track.</p>
     </header>
 
     
     <section class="doc-sec" id="what-it-is">
       <h2>What it is</h2>
       
-        <p>The camera applies a pan, zoom and rotation to the whole frame, on top of your layers, and can add lens and film looks with the Effects sliders: fisheye, film grain, chromatic aberration, vignette and handheld shake. It is non-destructive - your keyframes are never changed - and it is applied to the preview and to exports alike.</p>
+        <p>The camera applies a pan, zoom and rotation to the whole frame, on top of your layers, and can add lens and film looks with the Effects sliders: fisheye, film grain, chromatic aberration, vignette and handheld shake. It is non-destructive: your keyframes are never changed. It is applied to the preview and to exports alike.</p>
         <p class="doc-note">While a <strong>Color layer</strong> is selected the camera steps aside and the panel locks, so dots land exactly where you click. Switch back to a normal layer and the camera returns, keys intact.</p>
         
 <figure class="doc-fig">
@@ -85,7 +85,7 @@
           <li>Drag any of the Pan X, Pan Y, Zoom, Rotation or Effects sliders.</li>
           <li>A camera key appears at the playhead. The first key is remembered for the whole timeline, so the pose holds before your camera moves.</li>
         </ol>
-        <p>You can also press <code>Add key</code> to stamp a key with the current values when you want the pose to stay readable.</p>
+        <p>You can also press <code>Add key</code> to stamp a key with the current values when you want to lock the pose in.</p>
       
     </section>
 
@@ -110,7 +110,7 @@
           <li><strong>Chromatic aberration</strong> splits red and blue along the edges for a cheap lens look.</li>
           <li><strong>Film grain</strong> adds a seeded speckle over the whole frame.</li>
           <li><strong>Vignette</strong> darkens the corners to focus the centre.</li>
-          <li><strong>Handheld shake</strong> adds a smooth, low-frequency wobble to the frame for a real-camera feel, and the <strong>Shake speed</strong> slider right below it tunes how quickly it wobbles - a slow drift up to an energetic handheld look.</li>
+          <li><strong>Handheld shake</strong> adds a smooth, low-frequency wobble to the frame for a real-camera feel. The <strong>Shake speed</strong> slider right below it tunes how quickly it wobbles: from a slow drift to an energetic handheld look.</li>
         </ul>
         <p>Grain and shake are deterministic: the same frame always renders the same way in the preview, the filmstrip and your exports.</p>
       

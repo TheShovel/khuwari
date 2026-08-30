@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Getting started · Khuwari</title>
-<meta name="description" content="What Khuwari is, how to open it, and how project files work.">
+<meta name="description" content="What Khuwari is, how to open it, and how a project becomes one tidy file.">
 <link rel="stylesheet" href="../site.css">
 </head>
 <body>
@@ -59,24 +59,24 @@
 
     <header class="doc-head rise-1">
       <h1>Getting started</h1>
-      <p>What Khuwari is, how to open it, and how project files work.</p>
+      <p>What Khuwari is, how to open it, and how a project becomes one tidy file.</p>
     </header>
 
     
     <section class="doc-sec" id="what-is">
       <h2>What is Khuwari?</h2>
       
-        <p>Khuwari is a browser based animation tool that fills in the frames between your keyframes using machine learning. You draw or import the important poses, place them on the timeline, and Khuwari generates everything in between.</p>
+        <p>Khuwari is an animation tool that lives in your browser. You draw or import the poses that matter, drop them on the timeline, and a machine learning model draws everything in between. You do the fun parts; it sweats the boring parts.</p>
         <h3>The idea</h3>
         <ul>
-          <li>You provide the key poses, called <strong>keyframes</strong>.</li>
-          <li>Khuwari generates the frames between them, called <strong>inbetweens</strong>.</li>
+          <li>You make the key poses, called <strong>keyframes</strong>.</li>
+          <li>Khuwari makes the frames between them, called <strong>inbetweens</strong>, so you never have to.</li>
           <li>Everything runs in your browser. The model downloads once, and your art never leaves your machine.</li>
         </ul>
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/win.png" alt="The Khuwari window with a project loaded: assets on the left, the canvas in the middle, the selection panel on the right, and the timeline along the bottom" width="720">
-  <figcaption>The whole Khuwari window. Your image library sits on the left, the canvas is in the middle, the selection panel is on the right, and the timeline runs along the bottom.</figcaption>
+  <figcaption>The whole Khuwari window: library on the left, canvas in the middle, selection panel on the right, timeline along the bottom.</figcaption>
 </figure>
       
     </section>
@@ -84,17 +84,17 @@
     <section class="doc-sec" id="open-app">
       <h2>Open the app</h2>
       
-        <p>The easiest way is to open the app straight from the <a href="https://theshovel.rocks/khuwari/" target="_blank" rel="noopener">Khuwari website</a> in your browser. No install, nothing to set up, everything runs in the tab. This is the recommended way to use Khuwari.</p>
-        <p>You can also host it yourself. Khuwari is a static site, so any file server works.</p>
+        <p>The easiest way is to open the app straight from the <a href="https://theshovel.rocks/khuwari/" target="_blank" rel="noopener">Khuwari website</a>, right in your browser. No install, no account, no "please enable notifications" dance. This is the recommended way to use Khuwari.</p>
+        <p>Prefer to host it yourself? Khuwari is a static site, so any file server works.</p>
         <ol>
           <li>Serve the project folder, for example with <code>python3 -m http.server 4000</code>.</li>
           <li>Open <code>http://localhost:4000</code> in your browser.</li>
         </ol>
-        <p>From the start screen you can start a new project, load an existing <code>.khuwari</code> file, or try the bundled example project. The example project is the fastest way to see a finished animation. Load it and press play.</p>
+        <p>The start screen can start a new project, load an existing <code>.khuwari</code> file, or open the bundled example project. Load the example and press play: it is the fastest way to see a finished animation without drawing a single frame.</p>
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/start.png" alt="The Khuwari start screen with the mascot banner and the launch buttons" width="720">
-  <figcaption>The start screen greets you with a new project, load, docs, example project, credits and GitHub buttons.</figcaption>
+  <figcaption>The start screen offers a new project, load, docs, an example project, credits and GitHub.</figcaption>
 </figure>
       
     </section>
@@ -102,11 +102,11 @@
     <section class="doc-sec" id="project-files">
       <h2>Project files</h2>
       
-        <p>Projects save as <code>.khuwari</code> files that are easy to version and share.</p>
+        <p>Projects save as <code>.khuwari</code> files, one file per project, easy to version and share.</p>
         <ul>
-          <li>Use <code>File</code> in the toolbar, then <code>Save project (.khuwari)</code> to download one.</li>
-          <li>Use <code>File</code>, then <code>Load project</code> to bring one back.</li>
-          <li>A project file holds your layers, keyframes, gaps and settings.</li>
+          <li>Use <code>File</code> in the toolbar, then <code>Save project (.khuwari)</code>, to download one.</li>
+          <li>Use <code>File</code>, then <code>Load project</code>, to bring one back.</li>
+          <li>A project file holds your layers, keyframes, gaps and settings. If you can send a file, you can send your animation.</li>
         </ul>
         
 <figure class="doc-fig">
@@ -120,7 +120,7 @@
     <circle cx="316" cy="118" r="3.5" fill="#8aa3b9"/><text x="328" y="122" font-size="15" fill="#e6e9ee">keyframes and gaps</text>
     <circle cx="316" cy="144" r="3.5" fill="#8aa3b9"/><text x="328" y="148" font-size="15" fill="#e6e9ee">settings</text>
   </svg>
-  <figcaption>A project is one file, easy to save, share and version.</figcaption>
+  <figcaption>One project, one file: easy to save, share and version.</figcaption>
 </figure>
       
     </section>

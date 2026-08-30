@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Documentation · Khuwari</title>
-<meta name="description" content="Khuwari documentation: keyframes, gaps, interpolation modes, color layers, the paint tool, onion skinning, camera, audio, export and more.">
+<meta name="description" content="Khuwari documentation: keyframes, gaps and inbetweens, color layers, the paint tool, onion skinning, camera, audio, export and more.">
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -29,7 +29,7 @@
 
   <div class="docs-head">
     <h1 class="rise">Documentation</h1>
-    <p class="rise-1">Everything you need to get animating. Search across the whole guide, or pick a category below. Press <kbd>/</kbd> to jump to the search from anywhere on this page.</p>
+    <p class="rise-1">Everything you need to get animating, and a search box because nobody reads a guide front to back. Press <kbd>/</kbd> to jump to the search from anywhere on this page.</p>
     <div class="search-wrap rise-2">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <input id="docSearch" type="search" placeholder="Search the docs, for example: motion blur" autocomplete="off" spellcheck="false">
@@ -40,7 +40,7 @@
   <div id="searchResults" class="search-results hidden"></div>
   <div id="searchEmpty" class="hidden">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <div>No topics match that search. Try a different word.</div>
+    <div>No matches. Try a different word, or pick a category below.</div>
   </div>
 
   <section id="catGrid">
@@ -49,22 +49,22 @@
       <a class="doc-card rise" href="docs/getting-started.html">
         <span class="doc-card-count">3 topics</span>
         <h3>Getting started</h3>
-        <p>What Khuwari is, how to open it, and how project files work.</p>
+        <p>What Khuwari is, how to open it, and how a project becomes one tidy file.</p>
       </a>
       <a class="doc-card rise" href="docs/interface.html">
         <span class="doc-card-count">5 topics</span>
         <h3>The interface</h3>
-        <p>The assets panel, the preview, the timeline, the selection panel and layers.</p>
+        <p>Where everything lives: assets, preview, timeline, selection panel and layers.</p>
       </a>
       <a class="doc-card rise" href="docs/keyframes.html">
         <span class="doc-card-count">5 topics</span>
         <h3>Keyframes</h3>
-        <p>Adding, selecting, moving, resizing, timing, replacing and deleting frames.</p>
+        <p>Adding, selecting, moving, retiming, replacing and deleting frames.</p>
       </a>
       <a class="doc-card rise" href="docs/gaps.html">
         <span class="doc-card-count">6 topics</span>
-        <h3>Gaps &amp; interpolation</h3>
-        <p>Machine learning, squash and stretch, no interpolation, motion blur and regeneration.</p>
+        <h3>Gaps &amp; inbetweens</h3>
+        <p>Machine learning, squash and stretch, motion blur, regeneration, and when to skip it all.</p>
       </a>
       <a class="doc-card rise" href="docs/color-layers.html">
         <span class="doc-card-count">5 topics</span>
@@ -74,7 +74,7 @@
       <a class="doc-card rise" href="docs/onion-skinning.html">
         <span class="doc-card-count">4 topics</span>
         <h3>Onion skinning</h3>
-        <p>Seeing the frames around the current one, and configuring the ghosts.</p>
+        <p>Ghosts of the frames around the current one, and how to configure them.</p>
       </a>
       <a class="doc-card rise" href="docs/paint.html">
         <span class="doc-card-count">9 topics</span>
@@ -89,37 +89,37 @@
       <a class="doc-card rise" href="docs/camera.html">
         <span class="doc-card-count">6 topics</span>
         <h3>Camera</h3>
-        <p>Non-destructive pan, zoom and rotation, plus lens and film effects like fisheye, film grain, chromatic aberration, vignette and handheld shake - every value keyframed on its own track.</p>
+        <p>A non-destructive camera: pan, zoom and rotation plus lens and film effects, all keyframed on their own track.</p>
       </a>
       <a class="doc-card rise" href="docs/audio.html">
         <span class="doc-card-count">4 topics</span>
         <h3>Audio</h3>
-        <p>A reference audio track that plays in sync with your timeline.</p>
+        <p>A reference audio track that plays in sync with your timeline, so you can hit the beat.</p>
       </a>
       <a class="doc-card rise" href="docs/undo-redo.html">
         <span class="doc-card-count">4 topics</span>
         <h3>Undo &amp; redo</h3>
-        <p>Step your edits back and forward, in the timeline and in the paint tool.</p>
+        <p>Stepping your edits back and forward, in the timeline and in the paint tool.</p>
       </a>
       <a class="doc-card rise" href="docs/export.html">
         <span class="doc-card-count">2 topics</span>
         <h3>Export</h3>
-        <p>PNG sequences, GIFs, video in five containers and exporting the current frame.</p>
+        <p>PNG sequences, GIFs, video in five containers, and a single frame when you need just one.</p>
       </a>
       <a class="doc-card rise" href="docs/settings.html">
         <span class="doc-card-count">4 topics</span>
         <h3>Settings</h3>
-        <p>FPS, snapping, aspect ratios and the working size.</p>
+        <p>FPS, snapping, aspect ratios and the working size, all from one menu.</p>
       </a>
       <a class="doc-card rise" href="docs/shortcuts.html">
         <span class="doc-card-count">2 topics</span>
         <h3>Keyboard shortcuts</h3>
-        <p>Playback and editing shortcuts, and when they are ignored.</p>
+        <p>Playback and editing shortcuts, and when typing wins.</p>
       </a>
       <a class="doc-card rise" href="docs/privacy.html">
         <span class="doc-card-count">1 topic</span>
         <h3>Privacy</h3>
-        <p>How Khuwari stays local and what never leaves your machine.</p>
+        <p>How Khuwari stays local, and what never leaves your machine.</p>
       </a>
     </div>
   </section>

@@ -66,11 +66,11 @@
     <section class="doc-sec" id="what-they-do">
       <h2>What they do</h2>
       
-        <p>A color layer holds dots instead of keyframes. Each dot acts like a smart bucket fill for the layer above it, so you can color in line art without touching the drawing.</p>
+        <p>A color layer holds dots instead of keyframes. Each dot is a smart bucket fill for the layer above it: click, and the enclosed area inside the nearest lines fills with color, without touching the drawing.</p>
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/colorfill.png" alt="Color dots flooding the line art shapes on the canvas" width="720">
-  <figcaption>Each dot flood-fills the connected area inside the nearest lines.</figcaption>
+  <figcaption>Each dot flood-fills the enclosed area inside the nearest lines.</figcaption>
 </figure>
       
     </section>
@@ -83,7 +83,7 @@
           <li>Click on the canvas to place a dot.</li>
           <li>The dot fills everything inside the nearest lines of the layer above.</li>
         </ol>
-        <p class="doc-note">New dots remember the last color you used, so coloring many regions is quick. You can also copy and paste a dot's properties onto other dots.</p>
+        <p class="doc-note">New dots remember the last color you used, so coloring many regions goes fast. You can also copy and paste a dot's properties onto other dots.</p>
       
     </section>
 
@@ -92,7 +92,7 @@
       
         <ul>
           <li><strong>Fill color</strong> is what the dot pours into the area.</li>
-          <li><strong>Threshold</strong> is how strong a line must be to stop the fill.</li>
+          <li><strong>Threshold</strong> decides how strong a line must be to stop the fill.</li>
           <li><strong>Grow</strong> is a radius in pixels that tucks the color under soft edges.</li>
         </ul>
       
@@ -113,7 +113,7 @@
     <section class="doc-sec" id="timing">
       <h2>Timing</h2>
       
-        <p>Dots only work during the time you set. Use the start and end fields in the right panel, or drag the dot chip on the timeline and drag its edges to resize. Outside that window the dot does nothing.</p>
+        <p>Dots only work during the time you set. Use the start and end fields in the right panel, or drag the dot chip on the timeline and drag its edges to resize. Outside that window the dot might as well not exist.</p>
       
     </section>
 

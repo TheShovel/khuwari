@@ -66,17 +66,17 @@
     <section class="doc-sec" id="what-it-is">
       <h2>What it is</h2>
       
-        <p>The paint tool is a full drawing workspace built into Khuwari, styled after Krita. You can sketch, ink and color right inside the editor, keep your work on separate layers, and drop the result straight into the timeline.</p>
+        <p>The paint tool is a full drawing workspace built into Khuwari, styled after Krita. Sketch, ink and color right inside the editor, keep your work on separate layers, and drop the result straight into the timeline.</p>
         <ul>
           <li>Brushes, eraser, selection, transform, fill, shapes, line, eyedropper and crop tools.</li>
           <li>Krita-style layers: opacity, visibility and blend modes.</li>
           <li>Onion skinning, brush stabilizers and an HSV color wheel.</li>
-          <li>Paint-made images stay editable - their layers are saved with the project.</li>
+          <li>Paint-made images stay editable: their layers are saved with the project.</li>
         </ul>
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/paint.png" alt="The paint workspace: toolbar on top, tools on the left, the canvas in the center, and color, brushes and layers dockers on the right" width="720">
-  <figcaption>The paint workspace: a Krita-style window where you draw on the canvas in the center with tools, color, brushes and layers docked around it.</figcaption>
+  <figcaption>The paint workspace: a Krita-style window with tools, color, brushes and layers docked around the canvas.</figcaption>
 </figure>
       
     </section>
@@ -87,7 +87,7 @@
         <p>There are three ways in:</p>
         <ul>
           <li>The <code>Paint</code> button in the toolbar opens a blank canvas, ready for a new drawing.</li>
-          <li>Right-click a keyframe on the timeline and choose <code>Edit in paint</code> to redraw that pose in place - the existing image stays editable on a layer.</li>
+          <li>Right-click a keyframe on the timeline and choose <code>Edit in paint</code> to redraw that pose in place. The existing image stays editable on a layer.</li>
           <li>When you add a finished drawing to the library it becomes an asset you can drag onto the timeline like any other image.</li>
         </ul>
         <p class="doc-note">Leave the tool with <kbd>Esc</kbd> or the close button in the top-right corner. Editing a library image saves automatically when you close.</p>
@@ -123,10 +123,10 @@
     <section class="doc-sec" id="brushes">
       <h2>Brushes</h2>
       
-        <p>The brush docker is a Krita-style preset list. The toolbar shows the current brush plus quick <strong>size</strong> and <strong>opacity</strong> sliders - drag to change, double-click to type an exact value.</p>
+        <p>The brush docker is a Krita-style preset list. The toolbar shows the current brush plus quick <strong>size</strong> and <strong>opacity</strong> sliders: drag to change, double-click to type an exact value.</p>
         <ul>
           <li><strong>Hardness</strong> softens the brush edge.</li>
-          <li><strong>Smoothing</strong> adds a stabilizer (none, basic or stabilizer) to tame wobbly strokes.</li>
+          <li><strong>Smoothing</strong> adds a stabilizer (none, basic or stabilizer) to keep wobbly strokes in check.</li>
           <li>The bundle ships with Krita's default preset brushes (<code>.kpp</code>), including their real brush tips, plus MyPaint (<code>.myb</code>) brushes. Drop more files into <code>brushes/</code> and they are picked up automatically.</li>
         </ul>
       
@@ -148,7 +148,8 @@
     <section class="doc-sec" id="color">
       <h2>Color</h2>
       
-        <p>The color docker gives you an HSV color wheel - a saturation/value square and a hue slider - plus a hex field for exact colors. The color picker tool (<kbd>I</kbd>) grabs a color straight off the canvas. Colors you actually paint with collect in the <strong>Recent colors</strong> row below (brush strokes, lines, shapes and bucket fills; erasing and merely picking a color don't add anything) - click any swatch to bring it back, and the last 8 are saved inside your project file so they follow it wherever it goes.</p>
+        <p>The color docker gives you an HSV color wheel: a saturation/value square and a hue slider. There is also a hex field for exact colors, and the color picker tool (<kbd>I</kbd>) grabs a color straight off the canvas.</p>
+        <p>Colors you actually paint with collect in the <strong>Recent colors</strong> row (brush strokes, lines, shapes and bucket fills count; erasing or merely picking a color does not). Click a swatch to bring it back, and the last 8 are saved inside your project file so they follow it wherever it goes.</p>
       
     </section>
 
@@ -156,7 +157,7 @@
       <h2>Onion skin in paint</h2>
       
         <p>Turn on <code>Onion skin</code> in the tool docker to see the neighboring frames while you draw, with the same before/after counts, opacity and tint options as the main viewport.</p>
-        <p>Use the <strong>frame scrubber</strong> at the bottom of the workspace to move the playhead; the ghosts follow it so you can check the motion on either side of the frame you are drawing.</p>
+        <p>Use the <strong>frame scrubber</strong> at the bottom of the workspace to move the playhead; the ghosts follow it, so you can check the motion on either side of the frame you are drawing.</p>
       
     </section>
 
@@ -169,7 +170,7 @@
           <li>Rotate 90 degrees clockwise or counter-clockwise</li>
           <li>Resize the canvas, with optional aspect-lock and scale-content</li>
         </ul>
-        <p>The <strong>crop</strong> tool (<kbd>C</kbd>) trims to a rectangle you drag; press <kbd>Enter</kbd> to apply or <kbd>Esc</kbd> to cancel. Double-click empty space to re-center the view, scroll to zoom, and hold the middle mouse button (or <kbd>Shift</kbd> with a brush) to pan.</p>
+        <p>The <strong>crop</strong> tool (<kbd>C</kbd>) trims to a rectangle you drag; press <kbd>Enter</kbd> to apply or <kbd>Esc</kbd> to change your mind. Double-click empty space to re-center the view, scroll to zoom, and hold the middle mouse button (or <kbd>Shift</kbd> with a brush) to pan.</p>
       
     </section>
 

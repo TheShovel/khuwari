@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gaps & inbetweens · Khuwari</title>
-<meta name="description" content="Machine learning, squash and stretch, no inbetweens, motion blur and regeneration.">
+<meta name="description" content="Machine learning, squash and stretch, motion blur, regeneration, and when to skip it all.">
 <link rel="stylesheet" href="../site.css">
 </head>
 <body>
@@ -59,18 +59,18 @@
 
     <header class="doc-head rise-1">
       <h1>Gaps & inbetweens</h1>
-      <p>Machine learning, squash and stretch, no inbetweens, motion blur and regeneration.</p>
+      <p>Machine learning, squash and stretch, motion blur, regeneration, and when to skip it all.</p>
     </header>
 
     
     <section class="doc-sec" id="what-is-gap">
       <h2>What is a gap?</h2>
       
-        <p>The space between two keyframes on the same layer is a gap. Click the gap chip on the timeline to open its options in the right panel, and the inbetweens are generated there.</p>
+        <p>The space between two keyframes on the same layer is a gap. Click the gap chip on the timeline to open its options in the right panel; the inbetweens are generated there. This is where the magic happens (or the weirdness, depending on how different your keyframes are).</p>
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/gap.png" alt="A gap between two keyframes with the generated inbetween frames marked" width="720">
-  <figcaption>Between two keyframes is a gap. Khuwari generates the inbetween frames for it.</figcaption>
+  <figcaption>Between two keyframes there is a gap, and Khuwari draws the inbetween frames for you.</figcaption>
 </figure>
       
     </section>
@@ -78,14 +78,14 @@
     <section class="doc-sec" id="ml">
       <h2>Machine learning</h2>
       
-        <p>The default mode. A machine learning model generates the inbetween frames, which gives the most natural motion for complex art. This is where Khuwari shines.</p>
+        <p>The default mode. A machine learning model generates the inbetween frames, which gives the most natural motion for complex art. This is Khuwari's party trick.</p>
       
     </section>
 
     <section class="doc-sec" id="squash">
       <h2>Squash and stretch</h2>
       
-        <p>A stylized deformation for cartoon motion.</p>
+        <p>A stylized deformation for cartoon motion, so everything in between squishes and stretches with intent.</p>
         <ul>
           <li><strong>Amount</strong> controls how strong the deformation is, or set it to auto for a distance based value.</li>
           <li><strong>Curve</strong> picks the motion: anticipation (peak mid-gap), impact (builds to the end), ease (smooth) or linear.</li>
@@ -94,7 +94,7 @@
         
 <figure class="doc-fig">
   <img class="fig-img" src="../shots/squash.png" alt="A gap in squash mode with its options in the right panel" width="720">
-  <figcaption>Squash mode deforms the inbetweens for cartoon motion.</figcaption>
+  <figcaption>Squash mode deforms the inbetweens, cartoon style.</figcaption>
 </figure>
       
     </section>
@@ -102,17 +102,17 @@
     <section class="doc-sec" id="none">
       <h2>No inbetweens</h2>
       
-        <p>No inbetweens at all. The first keyframe simply holds until the next one starts. Good for flashes, cuts and text.</p>
+        <p>No inbetweens at all. The first keyframe simply holds until the next one starts. Perfect for flashes, cuts and text cards.</p>
       
     </section>
 
     <section class="doc-sec" id="motion-blur">
       <h2>Motion blur</h2>
       
-        <p>A per gap toggle. When on, the inbetweens smear along their motion, and the blur eases in and out with the movement.</p>
+        <p>A per-gap toggle. When on, the inbetweens smear along their motion, and the blur eases in and out with the movement.</p>
         <ul>
           <li>The <strong>intensity</strong> slider controls how strong the smear is.</li>
-          <li>It is designed to mask small imperfections in generated frames.</li>
+          <li>It is also a great way to hide small imperfections in generated frames. We will not tell anyone.</li>
           <li>It works on color layers too.</li>
         </ul>
         
@@ -126,7 +126,7 @@
     <section class="doc-sec" id="regenerate">
       <h2>Regenerate</h2>
       
-        <p>Inbetweens regenerate automatically whenever your keyframes change. To force a full refresh, use the regenerate button above the timeline, to the right of the play buttons.</p>
+        <p>Inbetweens regenerate automatically whenever your keyframes change. To force a full refresh, use the regenerate button above the timeline, to the right of the play buttons. Sometimes a little nudge helps.</p>
       
     </section>
 
