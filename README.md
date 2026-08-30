@@ -57,7 +57,7 @@ We don't support AI-generated "art". To us, AI is a practical tool for tedious t
 
 <img width="720" alt="Bar chart of Khuwari development time by category: coding 75.2%, AI coding 19.8%, writing docs 4.2%, writing tests 0.8%" src="hackatime-categories.svg">
 
-*Categories for the [ijwta project](https://hackatime.hackclub.com/@TheShovel/project/ijwta) from [Hackatime](https://hackatime.hackclub.com/), snapshot from Aug 30 2026. The category breakdown only shows on the logged-in project page, so this chart was assembled from it by hand.*
+*Categories for Khuwari (formerly named ijwta) from [Hackatime](https://hackatime.hackclub.com/@TheShovel/project/ijwta), snapshot from Aug 30 2026. The category breakdown only shows on the logged-in project page, so this chart was assembled from it by hand.*
 
 ## Credits
 
