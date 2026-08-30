@@ -182,3 +182,81 @@
       promise.then(function (v) { clearTimeout(timer); resolve(v); }, function (e) { clearTimeout(timer); reject(e); });
     });
   }
+
+  // Native number-input spinners look different in Chromium vs Firefox (and
+  // clash with the theme). This wraps every <input type="number"> in a custom
+  // stepper (two chevron buttons) that reuses the input's own min/max/step and
+  // reports through its native input/change events, so existing listeners keep
+  // working. Called once at boot; safe to call again on new subtrees.
+  function wireNumberSteppers(root) {
+    root = root || document;
+    var inputs = root.querySelectorAll('input[type="number"]');
+    Array.prototype.forEach.call(inputs, function (inp) {
+      if (inp.parentElement && inp.parentElement.classList.contains('num-stepper')) return;
+      var wrap = document.createElement('span');
+      wrap.className = 'num-stepper';
+      var up = document.createElement('button');
+      up.type = 'button';
+      up.className = 'num-stepper-btn num-stepper-up';
+      up.title = 'Increase value';
+      up.setAttribute('aria-label', up.title);
+      var dn = document.createElement('button');
+      dn.type = 'button';
+      dn.className = 'num-stepper-btn num-stepper-down';
+      dn.title = 'Decrease value';
+      dn.setAttribute('aria-label', dn.title);
+      function step(dir) {
+        try { if (dir > 0) inp.stepUp(); else inp.stepDown(); } catch (e) {}
+        // Replicate the native spinner's event sequence: listeners redraw off
+        // these (dot timing, layer opacity, fps, resize fields).
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+        try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
+      }
+      // Clicking steps once; holding the pointer down for a beat starts
+      // auto-repeating (ramping up a little so long runs feel smooth).
+      // Releasing before the delay still counts as a single click.
+      function wireStepperHold(btn, dir) {
+        var HOLD_MS = 550, FIRST_MS = 100, FAST_MS = 55;
+        var holdTimer = null, rep = null, ticks = 0;
+        function stop() {
+          if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+          if (rep) { clearInterval(rep); rep = null; }
+          btn.removeEventListener('pointerup', stop);
+          btn.removeEventListener('pointercancel', stop);
+          btn.removeEventListener('lostpointercapture', stop);
+        }
+        function tick() {
+          step(dir);
+          if (++ticks === 12) { clearInterval(rep); rep = setInterval(tick, FAST_MS); }
+        }
+        btn.addEventListener('pointerdown', function (e) {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          stop();
+          step(dir);
+          holdTimer = setTimeout(function () {
+            holdTimer = null;
+            ticks = 0;
+            rep = setInterval(tick, FIRST_MS);
+          }, HOLD_MS);
+          // Keep receiving pointerup/cancel even when the cursor leaves the
+          // button mid-hold.
+          try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+          btn.addEventListener('pointerup', stop);
+          btn.addEventListener('pointercancel', stop);
+          btn.addEventListener('lostpointercapture', stop);
+        });
+        // Keyboard activation (Enter/Space) fires a click with detail 0.
+        btn.addEventListener('click', function (e) {
+          if (e.detail === 0) step(dir);
+        });
+      }
+      wireStepperHold(up, 1);
+      wireStepperHold(dn, -1);
+      inp.parentElement.insertBefore(wrap, inp);
+      wrap.appendChild(inp);
+      wrap.appendChild(up);
+      wrap.appendChild(dn);
+    });
+  }

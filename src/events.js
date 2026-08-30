@@ -926,5 +926,8 @@
     // the right-click frame menu. Lives in src/paint.js.
     wirePaint();
 
+    // Custom number-input steppers replace the browser's native spinners.
+    wireNumberSteppers();
+
     updateUndoButtons();
   }
