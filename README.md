@@ -55,6 +55,8 @@ Make sure to run `npm install` before running them.
 
 We don't support AI-generated "art". To us, AI is a practical tool for tedious tasks, not a replacement for the things we enjoy doing. We will never add features that generate images, music or videos. All art for this project is made by TheShovel and the Khuwari contributors, without any generative AI tools.
 
+AI was used in this project to quickly make basic docs that I then edited, for some debugging and for testing and fixing bugs found in those tests.
+
 <img width="720" alt="Bar chart of Khuwari development time by category: coding 75.2%, AI coding 19.8%, writing docs 4.2%, writing tests 0.8%" src="hackatime-categories.svg">
 
 *Categories for Khuwari (formerly named ijwta) from [Hackatime](https://hackatime.hackclub.com/@TheShovel/project/ijwta), snapshot from Aug 30 2026. The category breakdown only shows on the logged-in project page, so this chart was assembled from it by hand.*
