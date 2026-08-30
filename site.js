@@ -3,82 +3,30 @@
 (function () {
   'use strict';
 
-  // Home page background doodles: a pool of sketch shapes that keep drawing
-  // themselves, like an animator's line test. Every cycle a doodle picks a
-  // random shape, glides to a random spot with a random tilt and size, draws
-  // it on, holds, un-draws, then picks the next shape somewhere else.
+  // Home page background doodles: the artist's white-outline drawings, tinted
+  // with the site's pencil palette via CSS masks (styles/site-base.css). A
+  // pool of doodles glides around the page; every placement gets a random
+  // tilt, an occasional mirror and a varied size, so the background always
+  // looks different. Each doodle fades in, holds with a slow tilt, then fades
+  // out and drifts off to somewhere new.
   var doodles = document.querySelector('.bg-doodles');
   if (doodles) {
-    var SVG_NS = 'http://www.w3.org/2000/svg';
-    var SHAPES = [
-      // bouncing ball with its motion arc
-      { c: 'd-gold', r: 140, paths: [
-        'M -130 40 Q 0 -110 130 40',
-        'M -130 40 m -15 0 a 15 15 0 1 0 30 0 a 15 15 0 1 0 -30 0',
-        'M -152 58 h 44'
-      ]},
-      // little creature line test
-      { c: 'd-blue', r: 95, paths: [
-        'M 0 -135 m -40 0 a 40 40 0 1 0 80 0 a 40 40 0 1 0 -80 0',
-        'M -18 -95 q 18 -28 36 0 l -6 38 q -12 10 -24 0 z',
-        'M -18 -85 q -24 14 -22 36',
-        'M 18 -85 q 24 14 22 36',
-        'M -10 -57 q -8 24 -16 38',
-        'M 10 -57 q 8 24 16 38',
-        'M -12 -120 q 12 10 24 0'
-      ]},
-      // five-point star
-      { c: 'd-gold', r: 100, paths: [
-        'M 0 -92 L 22 -30 L 88 -30 L 36 12 L 54 78 L 0 40 L -54 78 L -36 12 L -88 -30 L -22 -30 Z'
-      ]},
-      // heart
-      { c: 'd-sage', r: 90, paths: [
-        'M 0 42 C -72 -22 -72 -82 -26 -82 C -8 -82 0 -68 0 -52 C 0 -68 8 -82 26 -82 C 72 -82 72 -22 0 42 Z'
-      ]},
-      // spiral
-      { c: 'd-blue', r: 110, paths: [
-        'M 0 0 c 30 -30 70 -20 70 10 c 0 40 -60 60 -90 30 c -40 -35 -25 -90 25 -105 c 60 -20 110 30 90 80'
-      ]},
-      // crescent moon
-      { c: 'd-gold', r: 85, paths: [
-        'M 42 -72 A 76 76 0 1 0 42 72 A 56 56 0 1 1 42 -72 Z'
-      ]},
-      // flower: five petals around a center
-      { c: 'd-sage', r: 65, paths: [
-        'M 0 -46 m -14 0 a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0',
-        'M 43 -14 m -14 0 a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0',
-        'M 27 37 m -14 0 a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0',
-        'M -27 37 m -14 0 a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0',
-        'M -43 -14 m -14 0 a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0',
-        'M 0 0 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0'
-      ]},
-      // warm-up squiggle
-      { c: 'd-sage', r: 90, paths: [
-        'M -80 0 c 26 -44 78 -44 78 -6 c 0 34 -50 44 -78 10'
-      ]},
-      // sine wave
-      { c: 'd-blue', r: 130, paths: [
-        'M -120 0 q 30 -45 60 0 q 30 45 60 0 q 30 -45 60 0'
-      ]},
-      // onion skin ghost: a shape and its offset twin
-      { c: 'd-blue', r: 110, paths: [
-        'M 0 0 m -50 0 a 50 50 0 1 0 100 0 a 50 50 0 1 0 -100 0',
-        'M 54 -28 m -50 0 a 50 50 0 1 0 100 0 a 50 50 0 1 0 -100 0'
-      ]},
-      // curved arrow
-      { c: 'd-gold', r: 95, paths: [
-        'M -90 60 Q -90 -50 0 -50 Q 60 -50 60 0',
-        'M 44 -14 L 62 2 L 44 8'
-      ]},
-      // diamond
-      { c: 'd-sage', r: 90, paths: [
-        'M 0 -82 L 62 0 L 0 82 L -62 0 Z'
-      ]}
+    var DOODLES = [
+      { src: 'doodles/doodle1.png', c: 'd-gold',  w: 195, h: 175, m: 143 },
+      { src: 'doodles/doodle2.png', c: 'd-blue',  w: 183, h: 177, m: -132.6 },
+      { src: 'doodles/doodle3.png', c: 'd-red',   w: 169, h: 194, m: 129.8 },
+      { src: 'doodles/doodle4.png', c: 'd-sage',  w: 189, h: 164, m: 22.7 },
+      { src: 'doodles/doodle5.png', c: 'd-ochre', w: 200, h: 166, m: -156.7 },
+      { src: 'doodles/doodle6.png', c: 'd-gold',  w: 141, h: 154, m: 66.9 },
+      { src: 'doodles/doodle7.png', c: 'd-slate', w: 144, h: 154, m: 44.2 }
     ];
+    // The doodle field was drawn on a 1440x900 canvas; positions become
+    // percentages of the actual viewport so they spread out on any screen.
+    var FIELD_W = 1440, FIELD_H = 900;
     function rand(min, max) { return min + Math.random() * (max - min); }
     function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-    // Spots currently occupied by a drawn doodle: { x, y, r }. New doodles pick
-    // a spot clear of every occupied one (with padding), so they never overlap.
+    // Spots currently occupied by a doodle: { x, y, r }. New doodles pick a
+    // spot clear of every occupied one (with padding), so they never overlap.
     var placed = [];
     function clearSpot(x, y, r) {
       for (var i = 0; i < placed.length; i++) {
@@ -89,15 +37,14 @@
       }
       return true;
     }
-    function pickSpot(shape, scale) {
-      var r = shape.r * scale;
-      var minX = r + 24, maxX = 1440 - r - 24;
-      var minY = r + 24, maxY = 900 - r - 24;
+    function pickSpot(doodle, scale) {
+      var r = Math.max(doodle.w, doodle.h) / 2 * scale;
+      var minX = r + 24, maxX = FIELD_W - r - 24;
+      var minY = r + 24, maxY = FIELD_H - r - 24;
       var best = null, bestClear = -1;
       for (var t = 0; t < 60; t++) {
         var x = rand(minX, maxX), y = rand(minY, maxY);
         if (clearSpot(x, y, r)) return { x: x, y: y, r: r };
-        // Track the candidate with the most breathing room for the fallback.
         var clear = 1e9;
         for (var i = 0; i < placed.length; i++) {
           var o = placed[i];
@@ -108,68 +55,89 @@
       }
       return best || { x: rand(minX, maxX), y: rand(minY, maxY), r: r };
     }
-    function makeUnit() {
-      var g = document.createElementNS(SVG_NS, 'g');
-      g.setAttribute('class', 'd-unit');
-      doodles.appendChild(g);
-      return g;
+    // Doodle image URLs must resolve against the DOCUMENT (an inline custom
+    // property feeds mask-image; a bare relative path would resolve against
+    // the stylesheet instead). Anchoring the url keeps it page-independent.
+    function doodleUrl(src) {
+      var a = document.createElement('a');
+      a.href = src;
+      return a.href;
     }
-    function buildPaths(unit, shape) {
-      unit.innerHTML = '';
-      unit.setAttribute('class', 'd-unit ' + shape.c);
-      return shape.paths.map(function (d, i) {
-        var p = document.createElementNS(SVG_NS, 'path');
-        p.setAttribute('class', 'd-path');
-        p.setAttribute('pathLength', '1');
-        p.setAttribute('d', d);
-        p.style.transitionDelay = (i * 0.09) + 's';
-        p.style.strokeDashoffset = '1';
-        unit.appendChild(p);
-        return p;
-      });
+    // The draw-in sweep runs across the unit; direction comes from the
+    // drawing's main ink axis (m = screen degrees, y down): doodles whose
+    // strokes flow rightwards draw left-to-right, the rest right-to-left.
+    function sweepName(doodle) {
+      return Math.cos(doodle.m * Math.PI / 180) >= 0 ? 'd-sweep-lr' : 'd-sweep-rl';
+    }
+    function makeUnit(doodle, scale) {
+      var div = document.createElement('div');
+      div.className = 'd-unit ' + doodle.c;
+      div.style.setProperty('--doodle-src', 'url(\'' + doodleUrl(doodle.src) + '\')');
+      // Size scales with the viewport width so doodles stay in proportion on
+      // any screen; width and height share the vw unit to keep the aspect.
+      div.style.width = (doodle.w * scale / FIELD_W * 100).toFixed(2) + 'vw';
+      div.style.height = (doodle.h * scale / FIELD_W * 100).toFixed(2) + 'vw';
+      doodles.appendChild(div);
+      return div;
+    }
+    function place(div, spot, tilt, flip) {
+      div.style.left = (spot.x / FIELD_W * 100).toFixed(2) + '%';
+      div.style.top = (spot.y / FIELD_H * 100).toFixed(2) + '%';
+      div.style.transform = 'translate(-50%, -50%) rotate(' + tilt.toFixed(1) + 'deg) scale(' + (flip ? -1 : 1) + ', 1)';
     }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      // A few shapes, fully drawn, still, spread apart.
-      for (var s = 0; s < 4; s++) {
-        var g0 = makeUnit();
-        var sh = SHAPES[(Math.random() * SHAPES.length) | 0];
-        buildPaths(g0, sh).forEach(function (p) { p.style.transitionDelay = '0s'; p.style.strokeDashoffset = '0'; });
-        var spot = pickSpot(sh, 1);
+      // A few doodles, fully visible, still, spread apart.
+      for (var s = 0; s < 5; s++) {
+        var dd = DOODLES[(Math.random() * DOODLES.length) | 0];
+        var sc = rand(0.9, 1.3);
+        var spot = pickSpot(dd, sc);
         placed.push(spot);
-        g0.style.transform = 'translate(' + spot.x.toFixed(0) + 'px,' + spot.y.toFixed(0) + 'px) rotate(' + rand(-24, 24).toFixed(1) + 'deg)';
+        place(makeUnit(dd, sc), spot, rand(-24, 24), Math.random() < 0.3);
       }
     } else {
       var unitCount = 7;
       for (var u = 0; u < unitCount; u++) {
-        let unit = makeUnit();
-        // Reserve every starting spot now, synchronously, so the initial layout
-        // is already spread out (the glides begin only after all are claimed).
-        var s0shape = SHAPES[(Math.random() * SHAPES.length) | 0];
-        var s0scale = rand(0.85, 1.35);
-        var s0 = pickSpot(s0shape, s0scale);
+        var d0 = DOODLES[u];
+        var s0scale = rand(0.9, 1.4);
+        var s0 = pickSpot(d0, s0scale);
         placed.push(s0);
+        var div = makeUnit(d0, s0scale);
         (async function run() {
-          var shape = s0shape, scale = s0scale, spot = s0;
+          var unit = div, doodle = d0, scale = s0scale, spot = s0;
           for (;;) {
-            var paths = buildPaths(unit, shape);
-            unit.dataset.r = String(Math.round(spot.r));
-            unit.style.transform =
-              'translate(' + spot.x.toFixed(0) + 'px,' + spot.y.toFixed(0) + 'px) ' +
-              'rotate(' + rand(-28, 28).toFixed(1) + 'deg) ' +
-              'scale(' + scale.toFixed(2) + ')';
-            await sleep(1150);           // glide to the spot while hidden
-            paths.forEach(function (p) { p.style.strokeDashoffset = '0'; });
-            await sleep(900 + (paths.length - 1) * 90 + rand(700, 1300)); // drawn + hold
-            paths.forEach(function (p) { p.style.strokeDashoffset = '1'; });
-            await sleep(900 + (paths.length - 1) * 90 + 500);             // un-drawn + pause
-            // Free the old spot, claim the next one while still hidden, so
-            // every spot is held for its whole cycle and picks never collide.
+            var tilt = rand(-28, 28);
+            var flip = Math.random() < 0.35;
+            // Left/top land instantly; the transform glides the doodle into
+            // place while it is hidden. The clip is reset to a zero-width
+            // edge and the animation is cleared, so the reveal below always
+            // starts from a blank sheet.
+            unit.style.animation = 'none';
+            unit.style.clipPath = 'polygon(0 0, 0% 0, 0% 100%, 0 100%)';
+            place(unit, spot, tilt, flip);
+            unit.style.opacity = 0;
+            await sleep(1150);
+            unit.style.opacity = 1;
+            void unit.offsetHeight; // reflow so the sweep animation retriggers
+            unit.style.animation = sweepName(doodle) + ' 1.1s cubic-bezier(0.33, 1, 0.36, 1) forwards';
+            await sleep(1000);    // the drawing draws itself in
+            // A slow tilt while it holds, like it is settling on the paper.
+            unit.style.transform = 'translate(-50%, -50%) rotate(' + (tilt + rand(4, 10)).toFixed(1) + 'deg) scale(' + (flip ? -1 : 1) + ', 1)';
+            await sleep(1300 + rand(1000, 1900));
+            unit.style.opacity = 0;
+            await sleep(600);
+            // Free the old spot, claim the next one while still hidden.
             var idx = placed.indexOf(spot);
             if (idx !== -1) placed.splice(idx, 1);
-            shape = SHAPES[(Math.random() * SHAPES.length) | 0];
-            scale = rand(0.85, 1.35);
-            spot = pickSpot(shape, scale);
-            placed.push(spot);
+            doodle = DOODLES[(Math.random() * DOODLES.length) | 0];
+            scale = rand(0.9, 1.4);
+            var next = pickSpot(doodle, scale);
+            placed.push(next);
+            spot = next;
+            // Swap in the next doodle's tint and size while hidden.
+            unit.className = 'd-unit ' + doodle.c;
+            unit.style.setProperty('--doodle-src', 'url(\'' + doodleUrl(doodle.src) + '\')');
+            unit.style.width = (doodle.w * scale / FIELD_W * 100).toFixed(2) + 'vw';
+            unit.style.height = (doodle.h * scale / FIELD_W * 100).toFixed(2) + 'vw';
           }
         })();
       }

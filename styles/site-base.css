@@ -78,7 +78,11 @@ body::before {
     radial-gradient(1200px 400px at 50% 0%, rgba(0,0,0,0.04), transparent 70%);
 }
 
-/* Home page animated doodles — now graphite / coloured-pencil scribbles on paper */
+/* Home page background doodles — the artist's white-outline drawings, tinted
+   with the site's pencil palette. Each unit is a solid colour block masked by
+   a doodle's alpha (mask-image), so the strokes get the exact palette colour
+   and the transparent paper stays clean. site.js moves them around, tilting,
+   flipping and resizing each placement so the background always looks varied. */
 .bg-scene {
   position: fixed;
   inset: 0;
@@ -92,26 +96,41 @@ body::before {
   opacity: 0.32;
 }
 .bg-doodles .d-unit {
-  transition: transform 1.1s cubic-bezier(0.33, 1, 0.36, 1);
-  filter: url(#pencil-rough); /* harmless if filter missing */
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #c49a5a; /* fallback; colour classes override via vars */
+  --doodle-src: none;
+  -webkit-mask-image: var(--doodle-src);
+  mask-image: var(--doodle-src);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transition: transform 1.1s cubic-bezier(0.33, 1, 0.36, 1), opacity 0.55s ease-in-out;
+  opacity: 0;
 }
-.bg-doodles .d-path {
-  fill: none;
-  stroke-width: 2.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.9s ease-in-out;
-  /* subtle pencil texture: slightly uneven opacity */
-  opacity: 0.95;
+/* The draw-in: a zero-width clip grows across the unit (left to right, or
+   right to left for mirrored drawings), so the strokes appear to be penned
+   onto the paper. site.js picks the direction from each doodle's ink axis. */
+@keyframes d-sweep-lr {
+  from { clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%); }
+  to   { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
 }
-.d-gold .d-path  { stroke: #c49a5a; }
-.d-blue .d-path  { stroke: #4a6fa5; }
-.d-sage .d-path  { stroke: #6e9b7f; }
+@keyframes d-sweep-rl {
+  from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
+  to   { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+.d-gold  { background-color: #c49a5a; }
+.d-blue  { background-color: #4a6fa5; }
+.d-sage  { background-color: #6e9b7f; }
+.d-red   { background-color: #c46b6b; }
+.d-ochre { background-color: #d6b07a; }
+.d-slate { background-color: #8b93a0; }
 @media (prefers-reduced-motion: reduce) {
-  .bg-doodles .d-path { transition: none; stroke-dashoffset: 0; }
-  .bg-doodles .d-unit { transition: none; }
+  .bg-doodles .d-unit { transition: none; opacity: 1; animation: none !important; }
 }
 
 .hidden { display: none !important; }
