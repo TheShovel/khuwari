@@ -22,6 +22,8 @@ A stylized deformation for cartoon motion, so everything in between squishes and
 - **Curve** picks the motion: anticipation (peak mid-gap), impact (builds to the end), ease (smooth) or linear.
 - **Preserve** keeps area or volume constant while deforming.
 
+The deformation travels with the motion: the object's centre walks the path between the two keyframes while it squishes and stretches, pivoting on its own centre at every frame.
+
 [[fig:squash]]
 
 ## No inbetweens {#none}

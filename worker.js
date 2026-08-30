@@ -400,8 +400,13 @@ function generateGap(msg) {
     };
     if (mode === 'squash') {
       return ensureMeshes().then(function () {
-        var frame = morph.squashStretchFrame(aFlow, bFlow, meshes, width, height, t, squash);
-        if (!opaque) applyAlphaAt(frame, t);
+        // Squash renders keyframe A's own pixels (deformed + translated), so
+        // its alpha comes out of the transform itself — sample the ORIGINALS
+        // (real alpha), not the matte-encoded buffers. Stamping the flow-warped
+        // UNION alpha over it (the ML path's job) would turn keyframe B's
+        // silhouette opaque over pixels that still show A's background — a
+        // black/empty ghost of B on transparent gaps.
+        var frame = morph.squashStretchFrame(aData, bData, meshes, width, height, t, squash);
         return finish(frame, false);
       });
     }

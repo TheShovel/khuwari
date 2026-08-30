@@ -369,10 +369,12 @@
       };
       // Squash: affine squash-and-stretch along the detected motion
       // direction, pivoted on the moving mass (no mesh warp, no crossfade).
+      // Samples the ORIGINAL keyframes — the transform carries A's own alpha,
+      // so no union-alpha stamp (the ML path's job); the union would turn B's
+      // silhouette opaque over A's background (a black/empty ghost of B).
       if (gap.mode === 'squash') {
         return ensureMeshes().then(function () {
-          var frame = morph.squashStretchFrame(aFlow, bFlow, meshes, workW, workH, t, gapSquashOpts(gap.id));
-          if (!opaque) applyAlphaAt(frame, t);
+          var frame = morph.squashStretchFrame(aData, bData, meshes, workW, workH, t, gapSquashOpts(gap.id));
           return finish(frame, false);
         });
       }

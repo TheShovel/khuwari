@@ -1299,20 +1299,22 @@
     return out;
   }
 
+  // Motion summary of the moving content, from the DENSE flow: pixels with a
+  // real displacement (edges of moving objects; flat interiors and backgrounds
+  // have ~zero flow), weighted by magnitude. The mesh version was too coarse
+  // here — a centroid off by one cell visibly anchors the deformation wrong
+  // (the stretch/squash pivot drifts and the object lands off its path).
+  // avgU/avgV is the magnitude-weighted MEAN flow = the object's translation;
+  // cx/cy is the mass centroid of the moved pixels.
   function motionStats(meshes, width, height) {
-    var mesh = meshes.meshAB;
-    var cols = mesh.cols, rows = mesh.rows, cell = mesh.cell;
-    var sumU = 0, sumV = 0, sumMag = 0, count = 0;
-    var sumX = 0, sumY = 0;
-    for (var j = 0; j < rows; j++) {
-      for (var i = 0; i < cols; i++) {
-        var idx = j * cols + i;
-        var u = mesh.u[idx], v = mesh.v[idx];
-        var mag = Math.sqrt(u * u + v * v);
-        if (mag < 1.5) continue;
-        sumU += u * mag; sumV += v * mag; sumMag += mag; count++;
-        sumX += (i * cell) * mag; sumY += (j * cell) * mag;
-      }
+    var fu = meshes.flowAB.u, fv = meshes.flowAB.v;
+    var sumU = 0, sumV = 0, sumMag = 0, sumX = 0, sumY = 0, count = 0;
+    for (var p = 0; p < fu.length; p++) {
+      var u = fu[p], v = fv[p];
+      var mag = Math.sqrt(u * u + v * v);
+      if (mag < 1.5) continue;
+      sumU += u * mag; sumV += v * mag; sumMag += mag; count++;
+      sumX += (p % width) * mag; sumY += ((p / width) | 0) * mag;
     }
     if (!count || sumMag < 1e-6) return null;
     var ux = sumU / sumMag, uy = sumV / sumMag;
@@ -1329,45 +1331,111 @@
     };
   }
 
+  // Pixel-space centroid of each keyframe's foreground (what the deformation
+  // should anchor on and what travels). Transparent art uses the alpha
+  // silhouette; opaque art uses background-colour differencing (same distance
+  // convention as localCoherentColor). Returns null when no foreground is
+  // found, so callers fall back to the flow-based estimate.
+  function foregroundCentres(aData, bData, width, height) {
+    var n = width * height;
+    var useAlpha = false;
+    for (var p = 3; p < n * 4; p += 4) {
+      if (aData[p] < 250 || bData[p] < 250) { useAlpha = true; break; }
+    }
+    var bg = useAlpha ? null : flowBgColor(aData, bData, n);
+    var centre = function (rgba) {
+      var sx = 0, sy = 0, cnt = 0;
+      for (var i = 0; i < n; i++) {
+        var q = i * 4;
+        var fg;
+        if (useAlpha) {
+          fg = rgba[q + 3] > 9;
+        } else {
+          var dr = rgba[q] - bg[0], dg = rgba[q + 1] - bg[1], db = rgba[q + 2] - bg[2];
+          fg = Math.abs(dr) + Math.abs(dg) + Math.abs(db) > 36;
+        }
+        if (fg) { sx += i % width; sy += (i / width) | 0; cnt++; }
+      }
+      if (!cnt) return null;
+      return [sx / cnt, sy / cnt];
+    };
+    var a = centre(aData), b = centre(bData);
+    if (!a || !b) return null;
+    return { ax: a[0], ay: a[1], bx: b[0], by: b[1] };
+  }
+
   function squashStretchFrame(aData, bData, meshes, width, height, t, opts) {
-    var stats = motionStats(meshes, width, height);
-    if (!stats) return aData.slice();
     opts = opts || {};
-    var dist = Math.sqrt(stats.avgU * stats.avgU + stats.avgV * stats.avgV);
+    // Anchor on the keyframes' own foreground centroids: the start centre is
+    // the source pivot and the start→end vector is the travel, so the object
+    // walks its path while deforming around its current centre. The FLOW mask
+    // is not a reliable anchor — its centroid lands in the middle of the swept
+    // region (flow noise fills the covered/trailing area), which drags the
+    // deformation off the object. Flow is only the fallback.
+    var centre = foregroundCentres(aData, bData, width, height);
+    var useCentre = centre && (Math.abs(centre.bx - centre.ax) + Math.abs(centre.by - centre.ay) > 0.01);
+    var stats = useCentre ? null : motionStats(meshes, width, height);
+    var px, py, tx, ty, ux, uy, dist;
+    if (useCentre) {
+      px = centre.ax; py = centre.ay;
+      tx = centre.bx - centre.ax; ty = centre.by - centre.ay;
+      dist = Math.sqrt(tx * tx + ty * ty);
+      if (dist < 1e-3) return aData.slice();
+      ux = tx / dist; uy = ty / dist;
+    } else if (stats) {
+      px = stats.cx; py = stats.cy;
+      tx = stats.avgU; ty = stats.avgV;
+      dist = Math.sqrt(tx * tx + ty * ty);
+      if (dist < 1e-6) return aData.slice();
+      ux = stats.ux; uy = stats.uy;
+    } else {
+      return aData.slice();
+    }
     var autoK = Math.min(0.35, Math.max(0.06, dist / 100));
     var amount = opts.amount != null && isFinite(opts.amount) ? opts.amount : autoK;
     amount = Math.max(-0.8, Math.min(0.8, amount));
     var curve = opts.curve || 'peak';
     var p;
     if (curve === 'peak') p = Math.sin(Math.PI * t);
-    else if (curve === 'impact') p = t;
     else if (curve === 'ease') p = 0.5 * (1 - Math.cos(Math.PI * t));
-    else p = t;
+    else p = t; // 'impact' and 'linear' both build toward the end
     var kEff = amount * p;
     var s = 1 - kEff;
     if (s < 0.4) s = 0.4; else if (s > 1.8) s = 1.8;
-    var preserve = opts.preserve || 'area';
-    var perp = preserve === 'volume' ? 1 / Math.sqrt(s) : 1 / s;
-    var px = opts.px != null && isFinite(opts.px) ? opts.px : stats.cx;
-    var py = opts.py != null && isFinite(opts.py) ? opts.py : stats.cy;
-    if (px < 0) px = 0; else if (px > width - 1) px = width - 1;
-    if (py < 0) py = 0; else if (py > height - 1) py = height - 1;
-    return affineScale(aData, width, height, stats.ux, stats.uy, s, perp, px, py);
+    var perp = opts.preserve === 'volume' ? 1 / Math.sqrt(s) : 1 / s;
+    var ox = opts.px != null && isFinite(opts.px) ? opts.px : px;
+    var oy = opts.py != null && isFinite(opts.py) ? opts.py : py;
+    if (ox < 0) ox = 0; else if (ox > width - 1) ox = width - 1;
+    if (oy < 0) oy = 0; else if (oy > height - 1) oy = height - 1;
+    // The mass travels along (tx,ty) WHILE it deforms: at time t its centre is
+    // (ox,oy) + t·(tx,ty). Sampling each pixel from offsets around that MOVING
+    // centre anchors the stretch to the object as it travels, and the
+    // translation walks the object between the keyframes. Without it the whole
+    // gap renders the START keyframe deformed in place — the object never
+    // travels, then jumps to keyframe B — and on transparent gaps the RGB
+    // visibly detaches from the alpha (whose warp already follows t).
+    return affineScale(aData, width, height, ux, uy, s, perp,
+      ox + t * tx, oy + t * ty, ox, oy);
   }
 
-  function affineScale(src, width, height, ux, uy, s, inv, px, py) {
+  // Dest offsets are measured from the moving centre (px,py); source offsets
+  // come from the START centre (ox,oy), so the deformation pivot travels with
+  // the object instead of dragging the whole frame around a fixed anchor.
+  // With px==ox, py==oy this is the classic single-pivot affine scale.
+  function affineScale(src, width, height, ux, uy, s, inv, px, py, ox, oy) {
     var n = width * height;
     var out = new Uint8ClampedArray(n * 4);
-    var cx = px != null && isFinite(px) ? px : width / 2;
-    var cy = py != null && isFinite(py) ? py : height / 2;
+    var cx = px, cy = py;
+    if (ox == null || !isFinite(ox)) ox = px;
+    if (oy == null || !isFinite(oy)) oy = py;
     var w1 = width - 1, h1 = height - 1;
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         var dx = x - cx, dy = y - cy;
         var along = dx * ux + dy * uy;
         var perp = dx * -uy + dy * ux;
-        var fx = cx + (along / s) * ux - (perp / inv) * uy;
-        var fy = cy + (along / s) * uy + (perp / inv) * ux;
+        var fx = ox + (along / s) * ux - (perp / inv) * uy;
+        var fy = oy + (along / s) * uy + (perp / inv) * ux;
         if (fx < 0) fx = 0; else if (fx > w1) fx = w1;
         if (fy < 0) fy = 0; else if (fy > h1) fy = h1;
         var x0 = fx | 0, y0 = fy | 0;
