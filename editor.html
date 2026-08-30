@@ -881,6 +881,9 @@
               <button id="btnPaintMergeDown" class="paint-icon-btn" type="button" title="Merge down">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M9 8l3 3 3-3"/><rect x="4" y="13" width="16" height="8" rx="2"/></svg>
               </button>
+              <button id="btnPaintAddFilter" class="paint-icon-btn" type="button" title="Add filter (active layer)">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              </button>
             </div>
             <div class="paint-layer-props">
               <label class="paint-layer-prop">Opacity
@@ -907,7 +910,19 @@
               </div>
             </div>
           </div>
+          <div class="paint-docker collapsible" data-collapse-key="paint-filters">
+            <button class="docker-title collapsible-title" type="button">
+              <span>Filters</span>
+              <svg class="collapsible-chev" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="collapsible-body">
+              <div class="collapsible-inner">
+                <div id="paintFilterList" class="paint-filter-list"></div>
+              </div>
+            </div>
+          </div>
         </aside>
+        <div id="paintFilterMenu" class="context-menu hidden"></div>
       </div>
 
       <!-- Bottom status bar: actions, frame scrubber, zoom controls -->
@@ -1030,6 +1045,7 @@
   <script src="src/paint-brushes.js"></script>
   <script src="src/paint-parsers.js"></script>
   <script src="src/paint-layers.js"></script>
+  <script src="src/paint-filters.js"></script>
   <script src="src/paint-tools.js"></script>
   <script src="src/paint.js"></script>
   <script src="src/events.js"></script>

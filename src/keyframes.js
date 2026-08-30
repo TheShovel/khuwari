@@ -66,6 +66,7 @@
       id: 'k' + (idSeq++),
       layer: keyframeLayerId(),
       time: insertTime(atTime),
+      hold: 0.5, // dragged-in frames hold half a second by default
       img: imgSrc,
       name: meta ? meta.name : 'asset',
       w: meta ? meta.w : workW,

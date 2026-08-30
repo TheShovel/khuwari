@@ -76,6 +76,7 @@
   //   src/paint-brushes.js  - brush model, dab/stamping engine, MyPaint dynamics
   //   src/paint-parsers.js  - .kpp / .myb / .gbr / .gih / PNG / ZIP parsing + loading
   //   src/paint-layers.js   - paint layers, compositing, onion skin
+  //   src/paint-filters.js  - non-destructive layer filters (blur, color, shadow)
   //   src/paint-tools.js    - selection, masked painting, move/fill/shapes/crop/transform
   // This file holds the shared paint state, stroke loop, brush-list UI,
   // save-to-library flow, viewport zoom, open/close and the main wiring.
@@ -587,7 +588,10 @@
 
   function canvasToURL() { return paintCanvas.toDataURL('image/png'); }
 
-  function assetName() { return (current ? current.name : 'Paint') + ' paint'; }
+  // Painted frames exported to the library default to the next frame number:
+  // "frame<nr of timeline frames + 1>", so the paint-save-drag flow produces
+  // frame1, frame2, frame3, ...
+  function assetName() { return 'frame' + ((state.keyframes ? state.keyframes.length : 0) + 1); }
 
   function ensureAsset(url, layers) {
     if (!state.assets.some(function (a) { return a.img === url; })) {
@@ -628,9 +632,8 @@
   }
 
   // Brand-new library images are named the first time they are added: the tool
-  // asks before inserting (the previously-ugly auto name "<brush> paint" is the
-  // pre-filled suggestion). Cancelling just leaves the painting out of the
-  // library — it stays in the editor.
+  // asks before inserting, suggesting the next frame number ("frame5", ...).
+  // Cancelling just leaves the painting out of the library — it stays in the editor.
   function addNewLibraryAsset(url, layers) {
     if (state.assets.some(function (a) { return a.img === url; })) return; // unchanged paint already saved
     openNameDialog(assetName(), function (name) {
@@ -1166,6 +1169,37 @@
     var lbEl = byId('paintLayerBlend');
     if (lbEl) lbEl.addEventListener('change', function () { activeLayer.blend = lbEl.value; compositeDisplay(); });
 
+    // layer filters (Krita-style non-destructive effects on the active layer):
+    // the funnel button in the layer toolbar opens a menu of filter types.
+    var fBtn = byId('btnPaintAddFilter'), fMenu = byId('paintFilterMenu');
+    if (fBtn && fMenu) {
+      PAINT_FILTER_ORDER.forEach(function (type) {
+        var it = document.createElement('button');
+        it.type = 'button';
+        var sp = document.createElement('span');
+        sp.textContent = filterDef(type).label;
+        it.appendChild(sp);
+        it.addEventListener('click', function () {
+          fMenu.classList.add('hidden');
+          addLayerFilter(type);
+        });
+        fMenu.appendChild(it);
+      });
+      fBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        fMenu.classList.toggle('hidden');
+        if (fMenu.classList.contains('hidden')) return;
+        var r = fBtn.getBoundingClientRect();
+        fMenu.style.left = r.left + 'px';
+        fMenu.style.top = (r.bottom + 6) + 'px';
+        var mr = fMenu.getBoundingClientRect();
+        if (mr.right > window.innerWidth - 6) fMenu.style.left = Math.max(6, r.right - mr.width) + 'px';
+        if (mr.bottom > window.innerHeight - 6) fMenu.style.top = Math.max(6, window.innerHeight - mr.height - 6) + 'px';
+      });
+      document.addEventListener('click', function () { fMenu.classList.add('hidden'); });
+    }
+    rebuildFilterUI();
+
     // actions
     byId('btnPaintClear').addEventListener('click', clearCanvas);
     byId('btnPaintUndo').addEventListener('click', undoStroke);
@@ -1183,9 +1217,12 @@
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       var mod = e.ctrlKey || e.metaKey;
       if (e.key === 'Escape') {
-        // Esc first cancels an active crop/transform/selection (handled in the
-        // extra-tools handler); if none is active, it closes the tool. We let
-        // that handler run and only close when nothing else consumed it.
+        // Esc first closes the open filter menu, then cancels an active
+        // crop/transform/selection (handled in the extra-tools handler); if
+        // none is active, it closes the tool. We let that handler run and only
+        // close when nothing else consumed it.
+        var fm = byId('paintFilterMenu');
+        if (fm && !fm.classList.contains('hidden')) { fm.classList.add('hidden'); e.preventDefault(); return; }
         var ld2 = byId('paintLeaveDialog');
         if (ld2 && !ld2.classList.contains('hidden')) { confirmLeavePaint(false); e.preventDefault(); return; }
         if (cropRect || xfrm || sel) return; // let wireExtraTools handle it

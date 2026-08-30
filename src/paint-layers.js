@@ -54,11 +54,12 @@
         }
         src = tmp;
       }
+      paintDispCtx.save();
       paintDispCtx.globalAlpha = l.opacity;
       paintDispCtx.globalCompositeOperation = l.blend || 'source-over';
+      paintDispCtx.filter = layerFilterCSS(l);
       paintDispCtx.drawImage(src, 0, 0, workW, workH);
-      paintDispCtx.globalAlpha = 1;
-      paintDispCtx.globalCompositeOperation = 'source-over';
+      paintDispCtx.restore();
     });
     renderOverlay();
   }
@@ -268,8 +269,9 @@
   }
 
   // Collapse a layer into the one directly beneath it (defaults to the active
-  // layer). Respects each layer's visibility + opacity, so the on-screen
-  // result is unchanged.
+  // layer). Respects each layer's visibility, opacity, blend mode and filters
+  // (the merged pixels bake both layers' effects), so the on-screen result is
+  // unchanged.
   function mergeDown(target) {
     var idx = target ? paintLayers.indexOf(target) : paintLayers.indexOf(activeLayer);
     if (idx <= 0) { toast('Already at the bottom'); return; }
@@ -278,11 +280,24 @@
     var mc = document.createElement('canvas');
     mc.width = workW; mc.height = workH;
     var mctx = mc.getContext('2d');
-    if (below.visible) { mctx.globalAlpha = below.opacity; mctx.drawImage(below.canvas, 0, 0, workW, workH); }
-    if (src.visible) { mctx.globalAlpha = src.opacity; mctx.drawImage(src.canvas, 0, 0, workW, workH); }
-    mctx.globalAlpha = 1;
+    if (below.visible) {
+      mctx.save();
+      mctx.filter = layerFilterCSS(below);
+      mctx.globalAlpha = below.opacity;
+      mctx.drawImage(below.canvas, 0, 0, workW, workH);
+      mctx.restore();
+    }
+    if (src.visible) {
+      mctx.save();
+      mctx.filter = layerFilterCSS(src);
+      mctx.globalAlpha = src.opacity;
+      mctx.globalCompositeOperation = src.blend || 'source-over';
+      mctx.drawImage(src.canvas, 0, 0, workW, workH);
+      mctx.restore();
+    }
     below.canvas = mc;
     below.opacity = 1;
+    below.filters = [];
     below.visible = !!(below.visible || src.visible);
     paintLayers.splice(idx, 1);
     if (src === activeLayer || paintLayers.indexOf(activeLayer) < 0) activeLayer = below;
@@ -319,7 +334,10 @@
       if (!l || !l.canvas) continue;
       var tg = cv.getContext('2d');
       tg.clearRect(0, 0, LAYER_THUMBS, LAYER_THUMBS);
+      tg.save();
+      tg.filter = layerFilterCSS(l);
       try { tg.drawImage(l.canvas, 0, 0, workW, workH, 0, 0, LAYER_THUMBS, LAYER_THUMBS); } catch (e) {}
+      tg.restore();
     }
   }
 
@@ -353,7 +371,10 @@
         row.appendChild(eye);
         // initial thumbnail
         var tg = thumb.getContext('2d');
+        tg.save();
+        tg.filter = layerFilterCSS(l);
         try { tg.drawImage(l.canvas, 0, 0, workW, workH, 0, 0, LAYER_THUMBS, LAYER_THUMBS); } catch (e) {}
+        tg.restore();
         eye.addEventListener('click', function (e) {
           e.stopPropagation();
           l.visible = !l.visible;
@@ -396,6 +417,7 @@
       })(l);
     }
     syncLayerProps();
+    rebuildFilterUI();
   }
 
   // Refresh the docker toolbar enabled-states and the active layer's
@@ -427,10 +449,13 @@
   }
 
   // Snapshot the current stack (layer pixels -> data URLs) for project save.
-  // Empty layers are dropped since they add nothing to the composite.
+  // Empty layers are dropped since they add nothing to the composite. Filters
+  // ride along as plain data so the stack reopens non-destructively.
   function capturePaintLayers() {
     return paintLayers.filter(layerHasInk).map(function (l) {
-      return { name: l.name, visible: !!l.visible, opacity: l.opacity, blend: l.blend || 'source-over', img: l.canvas.toDataURL('image/png') };
+      var o = { name: l.name, visible: !!l.visible, opacity: l.opacity, blend: l.blend || 'source-over', img: l.canvas.toDataURL('image/png') };
+      if (l.filters && l.filters.length) o.filters = l.filters.map(function (f) { return Object.assign({}, f); });
+      return o;
     });
   }
 
@@ -455,6 +480,10 @@
         blend: d.blend || 'source-over',
         canvas: cv
       };
+      if (Array.isArray(d.filters)) {
+        layer.filters = d.filters.map(clampLayerFilter).filter(Boolean);
+        if (!layer.filters.length) layer.filters = undefined;
+      }
       if (d.img) {
         pending++;
         var im = new Image();
@@ -475,10 +504,11 @@
     if (!kf) return;
     var real = capturePaintLayers();
     if (!real.length) { kf.paintLayers = undefined; return; }
-    // A single fully-opaque, visible layer whose pixels already equal the flattened
-    // image is perfectly reconstructed on reopen by seeding kf.img into layer 1, so
-    // storing it again would only bloat the project file. Skip it.
-    if (real.length === 1 && real[0].visible !== false && real[0].opacity === 1 && real[0].img === kf.img) {
+    // A single fully-opaque, visible, unfiltered layer whose pixels already
+    // equal the flattened image is perfectly reconstructed on reopen by seeding
+    // kf.img into layer 1, so storing it again would only bloat the project
+    // file. Skip it (a filtered layer differs visually, so it must be kept).
+    if (real.length === 1 && real[0].visible !== false && real[0].opacity === 1 && !(real[0].filters && real[0].filters.length) && real[0].img === kf.img) {
       kf.paintLayers = undefined;
       return;
     }
