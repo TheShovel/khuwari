@@ -56,3 +56,5 @@ We don't support AI-generated "art". To us, AI is a practical tool for tedious t
 ## Credits
 
 The full credits for 3rd party libraries and tools can be found on the [credits page](https://theshovel.rocks/khuwari/credits) on our website.
+
+(also, fuck you adobe)
